@@ -12,6 +12,10 @@ export function createSitePresence(client, userId, onChange) {
     let disposed = false, loading = false, refreshAgain = false;
     let snapshot = {};
 
+    function debug(event, details) {
+        if (process.env.NODE_ENV === 'development') console.debug('[PBP Presence]', event, details);
+    }
+
     function emit() {
         if (disposed) return;
         const next = {};
@@ -26,14 +30,8 @@ export function createSitePresence(client, userId, onChange) {
                 const key = meta.client_id || meta.presence_ref;
                 if (!key) return;
                 present.add(key);
-                const previous = entry.remote.get(key);
-                if (!meta.typing) entry.remote.delete(key);
-                else {
-                    if (!previous || previous.sequence !== meta.typing_sequence) {
-                        entry.remote.set(key, { sequence: meta.typing_sequence, until: now + REMOTE_TTL_MS });
-                    }
-                    if (entry.remote.get(key).until > now) typing = true;
-                }
+                const remote = entry.remote.get(key);
+                if (remote?.typing && remote.until > now) typing = true;
             });
             entry.remote.forEach((_, key) => { if (!present.has(key)) entry.remote.delete(key); });
             next[roomId] = { connected: entry.joined, users: [...users].sort(), typing };
@@ -52,15 +50,36 @@ export function createSitePresence(client, userId, onChange) {
             if (disposed || entries.get(entry.roomId) !== entry || !entry.joined || sequence !== entry.sequence) return;
             const result = await entry.channel.track({
                 user_id: userId, room_id: entry.roomId, client_id: clientId,
-                typing: entry.typing, typing_sequence: sequence
+                online: true
             });
+            debug('track', { roomId: entry.roomId, result });
             if (!disposed && entries.get(entry.roomId) === entry && result !== 'ok') {
                 entry.joined = false;
                 emit();
             }
-        }).catch(() => {
+        }).catch(error => {
+            debug('track-error', { roomId: entry.roomId, message: error.message });
             if (!disposed && entries.get(entry.roomId) === entry) { entry.joined = false; emit(); }
         });
+    }
+
+    function publishTyping(entry) {
+        if (disposed || !entry.joined) return;
+        const payload = { user_id: userId, room_id: entry.roomId, client_id: clientId, typing: entry.typing, sequence: ++entry.typingSequence };
+        entry.channel.send({ type: 'broadcast', event: 'typing', payload }).then(result => {
+            debug('typing-send', { roomId: entry.roomId, typing: payload.typing, result });
+        }).catch(error => debug('typing-error', { roomId: entry.roomId, message: error.message }));
+    }
+
+    function receiveTyping(entry, payload) {
+        if (!entry.joined || !payload || payload.room_id !== entry.roomId || payload.user_id === userId || typeof payload.typing !== 'boolean' || !Number.isSafeInteger(payload.sequence)) return;
+        const peer = Object.values(entry.channel.presenceState()).flat().find(meta => meta.client_id === payload.client_id && meta.user_id === payload.user_id && meta.room_id === entry.roomId);
+        if (!peer) return;
+        const previous = entry.remote.get(payload.client_id);
+        if (previous && previous.sequence >= payload.sequence) return;
+        entry.remote.set(payload.client_id, { sequence: payload.sequence, typing: payload.typing, until: Date.now() + REMOTE_TTL_MS });
+        debug('typing-receive', { roomId: entry.roomId, typing: payload.typing });
+        emit();
     }
 
     function stopTyping(entry) {
@@ -69,7 +88,7 @@ export function createSitePresence(client, userId, onChange) {
         entry.throttleTimer = null;
         if (!entry.typing) return;
         entry.typing = false;
-        publish(entry);
+        publishTyping(entry);
     }
 
     function setTyping(roomId, typing) {
@@ -82,11 +101,11 @@ export function createSitePresence(client, userId, onChange) {
         if (!entry.typing || elapsed >= THROTTLE_MS) {
             entry.typing = true;
             entry.lastSent = Date.now();
-            publish(entry);
+            publishTyping(entry);
         } else if (!entry.throttleTimer) {
             entry.throttleTimer = setTimeout(() => {
                 entry.throttleTimer = null;
-                if (entry.typing) { entry.lastSent = Date.now(); publish(entry); }
+                if (entry.typing) { entry.lastSent = Date.now(); publishTyping(entry); }
             }, THROTTLE_MS - elapsed);
         }
     }
@@ -103,10 +122,14 @@ export function createSitePresence(client, userId, onChange) {
     }
 
     function add(roomId) {
-        const channel = client.channel(`pbp-presence-${roomId}`, { config: { private: true, presence: { key: clientId } } });
-        const entry = { roomId, channel, joined: false, typing: false, sequence: 0, lastSent: 0, remote: new Map(), queue: Promise.resolve() };
+        const channel = client.channel(`pbp-presence-${roomId}`, { config: { private: true, broadcast: { ack: true, self: false }, presence: { key: clientId } } });
+        const entry = { roomId, channel, joined: false, typing: false, sequence: 0, typingSequence: 0, lastSent: 0, remote: new Map(), queue: Promise.resolve() };
         entries.set(roomId, entry);
-        channel.on('presence', { event: 'sync' }, emit).subscribe(status => {
+        channel.on('broadcast', { event: 'typing' }, ({ payload }) => receiveTyping(entry, payload)).on('system', {}, message => debug('system', { roomId, message })).on('presence', { event: 'sync' }, () => {
+            debug('sync', { roomId, peers: Object.values(channel.presenceState()).flat().map(meta => ({ roomId: meta.room_id, self: meta.user_id === userId, typing: meta.typing, sequence: meta.typing_sequence })) });
+            emit();
+        }).subscribe((status, error) => {
+            debug('subscription', { roomId, status, message: error?.message });
             if (disposed || entries.get(roomId) !== entry) return;
             entry.joined = status === 'SUBSCRIBED';
             if (entry.joined) publish(entry);
@@ -128,10 +151,12 @@ export function createSitePresence(client, userId, onChange) {
                 data.forEach(member => roomIds.add(member.room_id));
                 if (data.length < 1000) break;
             }
+            debug('memberships', { roomIds: [...roomIds] });
             entries.forEach((entry, id) => { if (!roomIds.has(id)) { entries.delete(id); remove(entry); } });
             roomIds.forEach(id => { if (!entries.has(id)) add(id); });
             emit();
-        } catch (_) {
+        } catch (error) {
+            debug('membership-error', { code: error.code, message: error.message });
             // Existing memberships remain until a successful refresh; RLS still gates each channel.
         } finally {
             loading = false;
@@ -160,7 +185,7 @@ export function createSitePresence(client, userId, onChange) {
     function resume() {
         if (disposed || navigator.onLine === false) return;
         entries.forEach(entry => {
-            if (entry.channel.state === 'joined') { entry.joined = true; publish(entry); }
+            if (entry.channel.state === 'joined' && !entry.joined) { entry.joined = true; publish(entry); }
         });
         refresh();
     }

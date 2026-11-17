@@ -45,6 +45,17 @@ export default function RoomView({ room, userId, characters, preferences, onChar
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
     const [editing, setEditing] = useState(null);
+    const [touchMessageId, setTouchMessageId] = useState(null);
+
+    useEffect(() => {
+        function selectTouchMessage(event) {
+            if (event.pointerType === 'mouse') return;
+            const message = event.target.closest?.('[data-touch-message-id]');
+            setTouchMessageId(message?.dataset.touchMessageId || null);
+        }
+        document.addEventListener('pointerdown', selectTouchMessage, true);
+        return () => document.removeEventListener('pointerdown', selectTouchMessage, true);
+    }, []);
     const [showCharacters, setShowCharacters] = useState(false);
     const [sending, setSending] = useState(false);
 
@@ -575,7 +586,7 @@ ${lines}
                     </div>
                 )}
 
-                <article className={`pbp-rp-message${isNarration ? ' pbp-rp-narration' : ''}`}
+                <article data-touch-message-id={isOwnMessage ? message.message_id : undefined} className={`pbp-rp-message${isNarration ? ' pbp-rp-narration' : ''}${isOwnMessage && touchMessageId === String(message.message_id) ? ' is-touch-active' : ''}`}
                          style={isNarration ? undefined : { '--pbp-character-color': characterColor }}>
                     {isNarration ? (
                         <div className="pbp-rp-narration-content">
