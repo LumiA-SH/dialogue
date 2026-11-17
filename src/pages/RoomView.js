@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Send, Image, PenLine, Trash2, Users, Download, Settings } from 'lucide-react';
+import {
+    ArrowLeft, Send, Image as ImageIcon, PenLine, Trash2,
+    Download, Settings, Plus, ChevronDown, ChevronUp, X,
+    PanelLeftClose, PanelLeftOpen
+} from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
@@ -8,10 +12,13 @@ import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
 import formatDate from '../utils/formatDate';
 import escapeHtml from '../utils/escapeHtml';
+import '../styles/pbp-room-view.css';
 
 const IMAGE_BUCKET = 'pbp-message-images';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const DEFAULT_CHARACTER_COLOR = '#527EC2';
+const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export default function RoomView({ room, userId, characters, preferences, onBack, onEdit, onError }) {
     const [messages, setMessages] = useState([]);
@@ -25,7 +32,23 @@ export default function RoomView({ room, userId, characters, preferences, onBack
     const [editing, setEditing] = useState(null);
     const [showCharacters, setShowCharacters] = useState(false);
     const [sending, setSending] = useState(false);
+
+    const [composerExpanded, setComposerExpanded] = useState(false);
+    const [mobileSceneOpen, setMobileSceneOpen] = useState(false);
+    const [sceneCollapsed, setSceneCollapsed] = useState(false);
+    const [sceneWidth, setSceneWidth] = useState(62);
+    const [viewImage, setViewImage] = useState(null);
+
     const bottomRef = useRef(null);
+    const containerRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const textareaRef = useRef(null);
+    const resizingRef = useRef(false);
+
+    const sceneImage = room.scene_img || room.room_bg_img || room.room_background_image || room.room_img || '';
+    const twitterMode = preferences?.input_style === 'twitter';
+    const showComposer = !twitterMode || composerExpanded;
+    const sendShortcut = preferences?.send_shortcut === 'alt_enter' ? 'alt_enter' : 'shift_enter';
 
     const load = useCallback(async () => {
         try {
@@ -82,9 +105,25 @@ export default function RoomView({ room, userId, characters, preferences, onBack
         return () => URL.revokeObjectURL(objectUrl);
     }, [imageFile]);
 
+    useEffect(() => {
+        if (composerExpanded) {
+            textareaRef.current?.focus();
+        }
+    }, [composerExpanded]);
+
     const availableCharacters = characters.filter(character =>
         roomCharacters.some(link => link.character_id === character.character_id)
     );
+
+    const currentCharacter = availableCharacters.find(character =>
+        character.character_id === selected
+    );
+
+    function getCharacterColor(value) {
+        return COLOR_PATTERN.test(value || '')
+            ? value.toUpperCase()
+            : DEFAULT_CHARACTER_COLOR;
+    }
 
     function handleImageChange(event) {
         const file = event.target.files?.[0];
@@ -103,6 +142,15 @@ export default function RoomView({ room, userId, characters, preferences, onBack
         }
 
         setImageFile(file);
+        setComposerExpanded(true);
+    }
+
+    function removeAttachedImage() {
+        setImageFile(null);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     }
 
     async function uploadImage(file) {
@@ -141,7 +189,9 @@ export default function RoomView({ room, userId, characters, preferences, onBack
             return;
         }
 
-        const character = availableCharacters.find(item => item.character_id === selected);
+        const character = availableCharacters.find(item =>
+            item.character_id === selected
+        );
 
         if (!narration && !character) {
             onError('현재 방에 등록된 본인 캐릭터만 사용할 수 있습니다.');
@@ -161,11 +211,19 @@ export default function RoomView({ room, userId, characters, preferences, onBack
                 text: text.trim() || null,
                 img: imageUrl,
                 character_name_snapshot: narration ? null : character.character_name,
-                character_portrait_snapshot: narration ? null : character.character_portrait
+                character_portrait_snapshot: narration ? null : character.character_portrait,
+                character_color_snapshot: narration
+                    ? null
+                    : getCharacterColor(character.character_color)
             });
 
             setText('');
-            setImageFile(null);
+            removeAttachedImage();
+
+            if (twitterMode) {
+                setComposerExpanded(false);
+            }
+
             await load();
         } catch (err) {
             onError(err.message);
@@ -203,8 +261,11 @@ export default function RoomView({ room, userId, characters, preferences, onBack
 
     function exportHtml() {
         const lines = messages.map(message => {
-            const name = message.character_name_snapshot || (message.message_type === 'narration' ? '나레이션' : '캐릭터');
+            const name = message.character_name_snapshot ||
+                (message.message_type === 'narration' ? '나레이션' : '캐릭터');
+
             const content = DOMPurify.sanitize(marked.parse(message.text || ''));
+
             const image = message.img
                 ? `<p><a href="${escapeHtml(message.img)}">첨부 이미지</a></p>`
                 : '';
@@ -229,9 +290,11 @@ ${lines}
 </body>
 </html>`;
 
-        const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-        const link = document.createElement('a');
+        const url = URL.createObjectURL(new Blob([html], {
+            type: 'text/html;charset=utf-8'
+        }));
 
+        const link = document.createElement('a');
         link.href = url;
         link.download = `pbp-room-${room.room_id}.html`;
         link.click();
@@ -242,15 +305,11 @@ ${lines}
     function onKeyDown(event) {
         if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
 
-        const shortcut = preferences?.send_shortcut || 'shift_enter';
+        const shouldSend = sendShortcut === 'alt_enter'
+            ? event.altKey && !event.shiftKey && !event.ctrlKey && !event.metaKey
+            : event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
 
-        if (shortcut === 'shift_enter' && event.shiftKey) {
-            return;
-        }
-
-        if (shortcut === 'ctrl_enter' && event.ctrlKey) {
-            return;
-        }
+        if (!shouldSend) return;
 
         event.preventDefault();
         send();
@@ -267,6 +326,7 @@ ${lines}
 
         if (error) onError(error.message);
     }
+
     async function connectCharacter(character) {
         try {
             const { error } = await supabase.from('room_character').insert({
@@ -290,120 +350,480 @@ ${lines}
         }
     }
 
-    return (
-        <div className="room-view">
-            <div className="room-header">
-                <button className="icon-button" onClick={onBack} title="뒤로">
-                    <ArrowLeft size={21} />
+    function beginResize(event) {
+        if (event.button !== 0) return;
+
+        resizingRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    function resizeScene(event) {
+        if (!resizingRef.current || !containerRef.current) return;
+
+        const bounds = containerRef.current.getBoundingClientRect();
+        const percent = ((event.clientX - bounds.left) / bounds.width) * 100;
+
+        setSceneWidth(Math.max(20, Math.min(70, percent)));
+    }
+
+    function finishResize(event) {
+        resizingRef.current = false;
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+    }
+
+    function renderMessage(message, index) {
+        const date = new Date(message.created_at).toDateString();
+        const previousDate = index
+            ? new Date(messages[index - 1].created_at).toDateString()
+            : null;
+
+        const isNarration = message.message_type === 'narration';
+        const isOwnMessage = message.user_id === userId;
+        const characterColor = getCharacterColor(message.character_color_snapshot);
+
+        const isEdited = message.updated_at &&
+            new Date(message.updated_at).getTime() >
+            new Date(message.created_at).getTime() + 1000;
+
+        const messageTime = new Date(message.created_at).toLocaleTimeString('ko-KR', {
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+
+        const messageContent = (
+            <div className="pbp-rp-message-content">
+                {message.img && (
+                    <button
+                        className="pbp-rp-image-button"
+                        type="button"
+                        title="이미지 확대"
+                        onClick={() => setViewImage(message.img)}
+                    >
+                        <img
+                            className="pbp-rp-message-image"
+                            src={message.img}
+                            alt="첨부 이미지"
+                        />
+                    </button>
+                )}
+
+                {message.text && (
+                    <div
+                        className="message-body pbp-rp-message-body"
+                        dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(marked.parse(message.text))
+                        }}
+                    />
+                )}
+            </div>
+        );
+
+        const messageActions = isOwnMessage && (
+            <div className="pbp-rp-inline-actions">
+                <button
+                    type="button"
+                    onClick={() => setEditing({
+                        ...message,
+                        text: message.text || '',
+                        img: message.img || ''
+                    })}
+                >
+                    <PenLine size={13} />
+                    수정
                 </button>
-                <div className="room-title">
-                    <h1>{room.room_name}</h1>
-                    <small>방 #{room.room_id}</small>
-                </div>
-                <button className="icon-button" title="로그 백업" onClick={exportHtml}>
-                    <Download size={19} />
-                </button>
-                <button className="icon-button" title="방 설정" onClick={onEdit}>
-                    <Settings size={19} />
+
+                <button
+                    type="button"
+                    className="danger"
+                    onClick={() => removeMessage(message)}
+                >
+                    <Trash2 size={13} />
+                    삭제
                 </button>
             </div>
+        );
 
-            <div className="message-list">
-                {messages.map((message, index) => {
-                    const date = new Date(message.created_at).toDateString();
-                    const previous = index ? new Date(messages[index - 1].created_at).toDateString() : null;
-
-                    return (
-                        <React.Fragment key={message.message_id}>
-                            {date !== previous && (
-                                <div className="date-divider">
-                                    {new Date(message.created_at).toLocaleDateString('ko-KR', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    })}
-                                </div>
-                            )}
-
-                            <article className={message.message_type === 'narration' ? 'message narration' : 'message'}>
-                                {message.message_type === 'character' && (
-                                    <Avatar src={message.character_portrait_snapshot} name={message.character_name_snapshot} size={46} />
-                                )}
-
-                                <div className="message-content">
-                                    <div className="message-meta">
-                                        <strong>
-                                            {message.message_type === 'narration' ? '나레이션' : message.character_name_snapshot || '캐릭터'}
-                                        </strong>
-                                        <span>{formatDate(message.created_at)}</span>
-                                        {message.updated_at && new Date(message.updated_at).getTime() > new Date(message.created_at).getTime() + 1000 && (
-                                            <small>수정됨</small>
-                                        )}
-                                    </div>
-
-                                    {message.text && (
-                                        <div className="message-body" dangerouslySetInnerHTML={{
-                                            __html: DOMPurify.sanitize(marked.parse(message.text))
-                                        }} />
-                                    )}
-
-                                    {message.img && (
-                                        <a href={message.img} target="_blank" rel="noopener noreferrer">
-                                            <img className="message-image" src={message.img} alt="첨부 이미지" />
-                                        </a>
-                                    )}
-
-                                    {message.user_id === userId && (
-                                        <div className="message-actions">
-                                            <button onClick={() => setEditing({ ...message, text: message.text || '', img: message.img || '' })}>
-                                                <PenLine size={14} /> 수정
-                                            </button>
-                                            <button onClick={() => removeMessage(message)}>
-                                                <Trash2 size={14} /> 삭제
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </article>
-                        </React.Fragment>
-                    );
-                })}
-
-                {!messages.length && <div className="empty">아직 기록된 이야기가 없어요.</div>}
-                <div ref={bottomRef} />
-            </div>
-
-            <div className="composer">
-                <div className="composer-tools">
-                    <button className={narration ? 'pill selected' : 'pill'} onClick={() => setNarration(value => !value)}>
-                        나레이션 {narration ? 'ON' : 'OFF'}
-                    </button>
-                    <button className="pill" onClick={() => setShowCharacters(true)}>
-                        <Users size={15} />
-                        {availableCharacters.find(item => item.character_id === selected)?.character_name || '캐릭터 선택'}
-                    </button>
-                </div>
-
-                <textarea value={text} onChange={event => setText(event.target.value)} onKeyDown={onKeyDown} placeholder={narration ? '나레이션을 입력하세요...' : '이야기를 이어가세요...'} rows={3} />
-
-                {imagePreview && (
-                    <div className="preview">
-                        <img className="message-image" src={imagePreview} alt="첨부 이미지 미리보기" />
-                        <button type="button" onClick={() => setImageFile(null)}>이미지 제거</button>
+        return (
+            <React.Fragment key={message.message_id}>
+                {date !== previousDate && (
+                    <div className="date-divider pbp-rp-date">
+                        {new Date(message.created_at).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
                     </div>
                 )}
 
-                <div className="composer-footer">
-                    <label className="image-field">
-                        <Image size={17} />
-                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} />
-                    </label>
-                    <small>{preferences?.send_shortcut === 'ctrl_enter' ? 'Ctrl' : 'Shift'} + Enter 줄바꿈</small>
-                    <button className="primary" disabled={sending || (!text.trim() && !imageFile)} onClick={send}>
-                        <Send size={17} /> 전송
+                <article
+                    className={`pbp-rp-message${isNarration ? ' pbp-rp-narration' : ''}`}
+                    style={isNarration ? undefined : {
+                        '--pbp-character-color': characterColor
+                    }}
+                >
+                    {isNarration ? (
+                        <div className="pbp-rp-narration-content">
+                            {messageContent}
+
+                            <time className="pbp-rp-narration-time">
+                                {isEdited ? '수정됨 · ' : ''}
+                                {messageTime}
+                            </time>
+                        </div>
+                    ) : (
+                        <div className="pbp-rp-character-row">
+                            <button
+                                className="pbp-rp-portrait-button"
+                                type="button"
+                                title="캐릭터 인장 보기"
+                                onClick={() => {
+                                    if (message.character_portrait_snapshot) {
+                                        setViewImage(message.character_portrait_snapshot);
+                                    }
+                                }}
+                            >
+                                <Avatar
+                                    src={message.character_portrait_snapshot}
+                                    name={message.character_name_snapshot}
+                                    size={40}
+                                />
+                            </button>
+
+                            <div className="pbp-rp-character-column">
+                                <div className="pbp-rp-message-header">
+                                    <strong className="pbp-rp-message-name">
+                                        {message.character_name_snapshot || '캐릭터'}
+                                    </strong>
+
+                                    {isEdited && (
+                                        <span className="pbp-rp-edited">
+                                            수정됨
+                                        </span>
+                                    )}
+
+                                    <time className="pbp-rp-message-time">
+                                        {messageTime}
+                                    </time>
+                                </div>
+
+                                <div className="pbp-rp-message-bubble">
+                                    {messageContent}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {messageActions}
+                </article>
+            </React.Fragment>
+        );
+    }
+
+    return (
+        <div
+            ref={containerRef}
+            className={`room-view pbp-room-view${sceneCollapsed ? ' pbp-scene-collapsed' : ''}`}
+            style={{ '--pbp-scene-width': `${sceneWidth}%` }}
+        >
+            <aside className="pbp-scene-stage" aria-label="RP방 장면 이미지">
+                {sceneImage ? (
+                    <>
+                        <img
+                            className="pbp-scene-blur"
+                            src={sceneImage}
+                            alt=""
+                        />
+
+                        <img
+                            className="pbp-scene-image"
+                            src={sceneImage}
+                            alt="현재 방의 장면"
+                        />
+                    </>
+                ) : (
+                    <div className="pbp-scene-placeholder">
+                        <ImageIcon size={32} />
+                        <span>배경 이미지가 등록되지 않았습니다.</span>
+                    </div>
+                )}
+
+                <button
+                    className="pbp-scene-back"
+                    type="button"
+                    onClick={onBack}
+                    title="방 목록"
+                >
+                    <ArrowLeft size={21} />
+                </button>
+
+                <div className="pbp-scene-actions">
+                    <button type="button" onClick={onEdit}>
+                        <Settings size={15} />
+                        방 설정
+                    </button>
+
+                    <button
+                        type="button"
+                        title="배경 영역 접기"
+                        aria-label="배경 영역 접기"
+                        onClick={() => setSceneCollapsed(true)}
+                    >
+                        <PanelLeftClose size={17} />
                     </button>
                 </div>
-            </div>
+            </aside>
+
+            {!sceneCollapsed && (
+                <div
+                    className="pbp-scene-resizer"
+                    role="separator"
+                    aria-label="배경 이미지와 RP 로그 영역 너비 조절"
+                    aria-orientation="vertical"
+                    tabIndex={0}
+                    onPointerDown={beginResize}
+                    onPointerMove={resizeScene}
+                    onPointerUp={finishResize}
+                    onPointerCancel={finishResize}
+                    onKeyDown={event => {
+                        if (event.key === 'ArrowLeft') {
+                            setSceneWidth(value => Math.max(20, value - 3));
+                        }
+
+                        if (event.key === 'ArrowRight') {
+                            setSceneWidth(value => Math.min(70, value + 3));
+                        }
+                    }}
+                />
+            )}
+
+            <section className="pbp-rp-panel">
+                <header className="room-header pbp-rp-header">
+                    <button
+                        className="icon-button pbp-rp-mobile-back"
+                        type="button"
+                        onClick={onBack}
+                        title="방 목록"
+                        aria-label="방 목록"
+                    >
+                        <ArrowLeft size={21} />
+                    </button>
+
+                    {sceneCollapsed && (
+                        <button
+                            className="icon-button pbp-rp-restore-scene"
+                            type="button"
+                            title="배경 영역 펼치기"
+                            onClick={() => setSceneCollapsed(false)}
+                        >
+                            <PanelLeftOpen size={20} />
+                        </button>
+                    )}
+
+                    <div className="room-title pbp-rp-title">
+                        <h1>{room.room_name}</h1>
+                    </div>
+
+                    <div className="pbp-rp-header-actions">
+                        <button
+                            className="icon-button"
+                            type="button"
+                            title="HTML 로그 백업"
+                            onClick={exportHtml}
+                        >
+                            <Download size={19} />
+                        </button>
+
+                        <button
+                            className="icon-button"
+                            type="button"
+                            title="방 설정"
+                            onClick={onEdit}
+                        >
+                            <Settings size={19} />
+                        </button>
+                    </div>
+                </header>
+
+                <div className={`pbp-mobile-scene${mobileSceneOpen ? ' is-open' : ''}`}>
+                    <button
+                        className="pbp-mobile-scene-toggle"
+                        type="button"
+                        onClick={() => setMobileSceneOpen(previous => !previous)}
+                        aria-expanded={mobileSceneOpen}
+                    >
+                        배경
+                        {mobileSceneOpen
+                            ? <ChevronUp size={17} />
+                            : <ChevronDown size={17} />}
+                    </button>
+
+                    {mobileSceneOpen && (
+                        <div className="pbp-mobile-scene-image">
+                            {sceneImage
+                                ? <img src={sceneImage} alt="현재 방의 장면" />
+                                : <span>등록된 배경 이미지가 없습니다.</span>}
+                        </div>
+                    )}
+                </div>
+
+                <div className="message-list pbp-rp-log">
+                    <div className="pbp-rp-reading">
+                        <div className="pbp-rp-reading-title">
+                            <h2>{room.room_name}</h2>
+                        </div>
+
+                        {messages.map(renderMessage)}
+
+                        {!messages.length && (
+                            <div className="empty">
+                                아직 기록된 이야기가 없어요.
+                            </div>
+                        )}
+
+                        <div ref={bottomRef} />
+                    </div>
+                </div>
+
+                <div className={`pbp-composer-wrap${twitterMode ? ' pbp-composer-twitter' : ''}`}>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleImageChange}
+                        hidden
+                    />
+
+                    {!composerExpanded && twitterMode && (
+                        <div className="pbp-composer-floating">
+                            {text.trim() && (
+                                <button
+                                    className="pbp-composer-draft"
+                                    type="button"
+                                    onClick={() => setComposerExpanded(true)}
+                                >
+                                    {text.trim().replace(/\s+/g, ' ').slice(0, 55)}
+                                </button>
+                            )}
+
+                            <button
+                                className="pbp-composer-fab"
+                                type="button"
+                                title="RP 작성"
+                                onClick={() => setComposerExpanded(true)}
+                            >
+                                <Plus size={25} />
+                            </button>
+                        </div>
+                    )}
+
+                    {showComposer && (
+                        <section className={`composer pbp-composer-expanded${narration ? ' is-narration' : ''}`}>
+                            <div className="pbp-composer-heading">
+                                {narration ? (
+                                    <div className="pbp-composer-identity">
+                                        <span className="pbp-narration-icon">N</span>
+                                        <strong>나레이션</strong>
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="pbp-composer-character"
+                                        type="button"
+                                        onClick={() => setShowCharacters(true)}
+                                    >
+                                        <Avatar
+                                            src={currentCharacter?.character_portrait}
+                                            name={currentCharacter?.character_name}
+                                            size={49}
+                                        />
+
+                                        <strong>
+                                            {currentCharacter?.character_name || '캐릭터 선택'}
+                                        </strong>
+
+                                        <ChevronDown size={17} />
+                                    </button>
+                                )}
+
+                                <button
+                                    className={`pbp-narration-toggle${narration ? ' active' : ''}`}
+                                    type="button"
+                                    aria-pressed={narration}
+                                    onClick={() => setNarration(value => !value)}
+                                >
+                                    나레이션
+                                </button>
+
+                                {twitterMode && (
+                                    <button
+                                        className="pbp-composer-icon"
+                                        type="button"
+                                        title="작성창 접기"
+                                        onClick={() => setComposerExpanded(false)}
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="pbp-composer-input-box">
+                                {imagePreview && (
+                                    <div className="pbp-composer-attachment">
+                                        <img
+                                            src={imagePreview}
+                                            alt="첨부 이미지 미리보기"
+                                        />
+
+                                        <button
+                                            type="button"
+                                            onClick={removeAttachedImage}
+                                            title="첨부 제거"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                )}
+
+                                <textarea
+                                    ref={textareaRef}
+                                    value={text}
+                                    onChange={event => setText(event.target.value)}
+                                    onKeyDown={onKeyDown}
+                                    placeholder={narration ? '나레이션을 입력하세요...' : '글을 입력하세요...'}
+                                    rows={2}
+                                />
+
+                                <div className="pbp-composer-footer">
+                                    <button
+                                        className="pbp-composer-icon"
+                                        type="button"
+                                        title="이미지 첨부"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <ImageIcon size={19} />
+                                    </button>
+
+                                    <span className="pbp-composer-shortcut">
+                                        {sendShortcut === 'alt_enter' ? 'Alt' : 'Shift'} + Enter 전송 · Enter 줄바꿈
+                                    </span>
+
+                                    <button
+                                        className="pbp-composer-send"
+                                        type="button"
+                                        disabled={sending || (!text.trim() && !imageFile)}
+                                        onClick={send}
+                                        title="전송"
+                                    >
+                                        <Send size={19} />
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+                </div>
+            </section>
 
             {showCharacters && (
                 <Modal title="이 방에서 사용할 캐릭터" onClose={() => setShowCharacters(false)}>
@@ -418,9 +838,16 @@ ${lines}
                                     <button
                                         key={character.character_id}
                                         className={selected === character.character_id ? 'picker-item active' : 'picker-item'}
-                                        onClick={() => connected ? selectCharacter(character) : connectCharacter(character)}
+                                        onClick={() => connected
+                                            ? selectCharacter(character)
+                                            : connectCharacter(character)}
                                     >
-                                        <Avatar src={character.character_portrait} name={character.character_name} size={40} />
+                                        <Avatar
+                                            src={character.character_portrait}
+                                            name={character.character_name}
+                                            size={40}
+                                        />
+
                                         <span>{character.character_name}</span>
                                         <small>{connected ? '선택' : '방에 연결'}</small>
                                     </button>
@@ -429,7 +856,9 @@ ${lines}
                         </div>
 
                         {!characters.length && (
-                            <p className="notice">등록된 캐릭터가 없습니다. 캐릭터 메뉴에서 먼저 추가해 주세요.</p>
+                            <p className="notice">
+                                등록된 캐릭터가 없습니다. 캐릭터 메뉴에서 먼저 추가해 주세요.
+                            </p>
                         )}
                     </div>
                 </Modal>
@@ -439,12 +868,34 @@ ${lines}
                 <Modal title="메시지 수정" onClose={() => setEditing(null)}>
                     <div className="form-body">
                         <label>본문</label>
-                        <textarea rows={6} value={editing.text} onChange={event => setEditing({ ...editing, text: event.target.value })} />
+
+                        <textarea
+                            rows={6}
+                            value={editing.text}
+                            onChange={event => setEditing({
+                                ...editing,
+                                text: event.target.value
+                            })}
+                        />
+
                         <label>이미지 URL</label>
-                        <input value={editing.img} onChange={event => setEditing({ ...editing, img: event.target.value })} />
-                        <button className="primary full" disabled={!editing.text.trim() && !editing.img.trim()} onClick={saveEdit}>
+
+                        <input value={editing.img} onChange={event => setEditing({
+                                ...editing, img: event.target.value
+                            })}
+                        />
+
+                        <button className="primary full" disabled={!editing.text.trim() && !editing.img.trim()} onClick={saveEdit} >
                             수정 저장
                         </button>
+                    </div>
+                </Modal>
+            )}
+
+            {viewImage && (
+                <Modal title="이미지 확대" onClose={() => setViewImage(null)}>
+                    <div className="pbp-rp-image-viewer">
+                        <img src={viewImage} alt="확대 이미지" />
                     </div>
                 </Modal>
             )}

@@ -1,0 +1,1002 @@
+/* ========================================
+   01. APP SHELL
+======================================== */
+
+.pbp-app {
+    --pbp-accent: #527ec2;
+    --pbp-accent-hover: #406caa;
+    --pbp-muted: color-mix(in srgb, var(--system-text) 55%, var(--sub));
+    --pbp-soft: color-mix(in srgb, var(--main) 65%, var(--sub));
+
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+    background: var(--main);
+    color: var(--system-text);
+}
+
+.pbp-app *,
+.pbp-app *::before,
+.pbp-app *::after {
+    box-sizing: border-box;
+}
+
+/* ========================================
+   02. GLOBAL HEADER
+======================================== */
+
+.pbp-app .pbp-global-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 74px;
+    width: 100%;
+    height: 74px;
+    min-height: 74px;
+    padding: 0 clamp(24px, 1.7vw, 34px);
+    border-bottom: 1px solid var(--border);
+    background: var(--sub);
+    z-index: 11;
+}
+
+.pbp-app .pbp-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--system-text);
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.035em;
+}
+
+.pbp-brand svg {
+    flex-shrink: 0;
+    width: 23px;
+    height: 23px;
+}
+
+.pbp-desktop-account {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.pbp-account-name {
+    max-width: 180px;
+    overflow: hidden;
+    color: var(--system-text);
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-logout-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    margin-left: 12px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--system-text);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.pbp-logout-button:hover {
+    background: var(--pbp-soft);
+}
+
+.pbp-mobile-account {
+    display: none;
+}
+
+/* ========================================
+   03. NAVIGATION
+======================================== */
+
+.pbp-app .pbp-shell {
+    display: grid;
+    grid-template-columns: clamp(216px, 14vw, 260px) minmax(0, 1fr);
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.pbp-app .pbp-sidebar {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 20px 17px;
+    border-right: 1px solid var(--border);
+    background: color-mix(in srgb, var(--sub) 68%, var(--main));
+}
+
+.pbp-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+}
+
+.pbp-app .pbp-nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    min-height: 47px;
+    margin: 0;
+    padding: 12px 13px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--pbp-muted);
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+    box-shadow: none;
+}
+
+.pbp-nav-item svg {
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+}
+
+.pbp-nav-item span {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pbp-app .pbp-nav-item:hover {
+    background: var(--pbp-soft);
+    color: var(--system-text);
+}
+
+.pbp-app .pbp-nav-item.active {
+    background: color-mix(in srgb, var(--border) 35%, var(--sub));
+    color: var(--system-text);
+    font-weight: 750;
+    box-shadow: none;
+}
+
+/* ========================================
+   04. CONTENT AREA
+======================================== */
+
+.pbp-app .pbp-content {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--main);
+}
+
+.pbp-page {
+    width: 100%;
+    max-width: 1250px;
+    min-width: 0;
+    margin: 0 auto;
+    padding: 42px clamp(22px, 3vw, 49px) 75px;
+}
+
+.pbp-app .pbp-page .section-heading {
+    margin-bottom: 28px;
+}
+
+.pbp-app .pbp-page .section-heading h1 {
+    font-size: 26px;
+    font-weight: 750;
+    letter-spacing: -0.04em;
+}
+
+.pbp-app .pbp-page .section-heading p {
+    color: var(--pbp-muted);
+    font-size: 13px;
+}
+
+.pbp-app .pbp-page .panel {
+    border-color: var(--border);
+    background: var(--sub);
+}
+
+/* ========================================
+   05. ROOM HOME TOOLBAR
+======================================== */
+
+.pbp-home {
+    width: 100%;
+    min-width: 0;
+}
+
+.pbp-home-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.pbp-home-heading {
+    flex: 1;
+    min-width: 0;
+}
+
+.pbp-home-heading h1 {
+    margin: 0;
+    color: var(--system-text);
+    font-size: 25px;
+    font-weight: 750;
+    letter-spacing: -0.045em;
+}
+
+.pbp-home-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pbp-room-search {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 245px;
+    height: 39px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--pbp-muted);
+}
+
+.pbp-room-search svg {
+    flex-shrink: 0;
+}
+
+.pbp-room-search input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: var(--system-text);
+    font-size: 12px;
+}
+
+.pbp-room-search:focus-within {
+    border-color: var(--pbp-accent);
+}
+
+.pbp-room-search input::placeholder {
+    color: var(--pbp-muted);
+}
+
+.pbp-app .pbp-new-room-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 39px;
+    min-height: 39px;
+    padding: 0 15px;
+    border: 1px solid var(--pbp-accent);
+    border-radius: 9px;
+    background: var(--pbp-accent);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pbp-app .pbp-new-room-button:hover {
+    background: var(--pbp-accent-hover);
+}
+
+/* ========================================
+   06. ROOM SECTIONS
+======================================== */
+
+.pbp-home-section {
+    margin-bottom: 31px;
+}
+
+.pbp-home-section-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 37px;
+    margin-bottom: 12px;
+}
+
+.pbp-home-section-heading h2 {
+    margin: 0;
+    color: var(--system-text);
+    font-size: 15px;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+}
+
+.pbp-home-section-heading > span {
+    color: var(--pbp-muted);
+    font-size: 11px;
+}
+
+.pbp-unread-section {
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border);
+}
+
+.pbp-room-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+}
+
+/* ========================================
+   07. ROOM CARDS
+======================================== */
+
+.pbp-room-card {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--sub);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pbp-room-card:hover {
+    border-color: color-mix(in srgb, var(--border) 45%, var(--pbp-accent));
+    box-shadow: 0 4px 18px #304d7110;
+}
+
+.pbp-room-card-main {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+    min-height: 112px;
+    padding: 16px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--system-text);
+    text-align: left;
+}
+
+.pbp-room-card.has-invite .pbp-room-card-main {
+    padding-right: 112px;
+}
+
+.pbp-room-card-main:focus-visible {
+    outline: 2px solid var(--pbp-accent);
+    outline-offset: 3px;
+}
+
+.pbp-room-cover {
+    display: grid;
+    place-items: center;
+    flex: 0 0 77px;
+    width: 77px;
+    height: 77px;
+    overflow: hidden;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--border) 50%, var(--sub));
+    color: var(--pbp-accent);
+}
+
+.pbp-room-cover img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pbp-room-info {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.pbp-room-name {
+    display: block;
+    overflow: hidden;
+    color: var(--system-text);
+    font-size: 15px;
+    font-weight: 750;
+    letter-spacing: -0.025em;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pbp-room-preview {
+    display: block;
+    overflow: hidden;
+    color: var(--pbp-muted);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pbp-room-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 10px;
+    row-gap: 5px;
+    color: var(--pbp-muted);
+    font-size: 10px;
+}
+
+.pbp-room-visibility {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pbp-room-visibility svg {
+    flex-shrink: 0;
+}
+
+.pbp-room-invite-button {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--system-text);
+    font-size: 11px;
+    font-weight: 650;
+}
+
+.pbp-room-invite-button:hover {
+    background: var(--pbp-soft);
+}
+
+.pbp-unread-badge {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    display: grid;
+    place-items: center;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 6px;
+    border-radius: 20px;
+    background: var(--pbp-accent);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 750;
+    pointer-events: none;
+}
+
+/* ========================================
+   08. INVITATIONS
+======================================== */
+
+.pbp-invite-panel {
+    margin-bottom: 28px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--sub);
+}
+
+.pbp-invite-panel .pbp-home-section-heading {
+    margin-bottom: 15px;
+}
+
+.pbp-invite-list,
+.pbp-invite-candidates {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.pbp-invite-candidates {
+    max-height: 310px;
+    margin-top: 19px;
+    overflow-y: auto;
+}
+
+.pbp-invite-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    min-width: 0;
+    padding: 13px 15px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--sub);
+}
+
+.pbp-invite-information {
+    flex: 1;
+    min-width: 0;
+}
+
+.pbp-invite-information strong {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--system-text);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.pbp-invite-information p {
+    margin: 0;
+    color: var(--pbp-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.pbp-invite-actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.pbp-invite-actions button {
+    min-height: 34px;
+    padding: 7px 11px;
+    font-size: 11px;
+}
+
+.pbp-invite-form .pbp-invite-item > span {
+    flex: 1;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.pbp-room-notice {
+    margin-bottom: 20px;
+}
+
+/* ========================================
+   09. EMPTY STATE
+======================================== */
+
+.pbp-home-empty {
+    padding: 40px 20px;
+    border: 1px dashed var(--border);
+    border-radius: 13px;
+    background: var(--sub);
+    color: var(--pbp-muted);
+    font-size: 12px;
+    text-align: center;
+}
+
+.pbp-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ========================================
+   10. ROOM VIEW SHELL
+======================================== */
+
+.pbp-app .pbp-shell-room {
+    display: block;
+    width: 100%;
+}
+
+.pbp-app .pbp-content-room {
+    height: 100%;
+    overflow: hidden;
+}
+
+.pbp-room-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+}
+
+.pbp-app-room .room-view {
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+}
+
+/* ========================================
+   11. DESKTOP
+======================================== */
+
+@media (min-width: 1200px) {
+    .pbp-room-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 15px;
+    }
+}
+
+/* ========================================
+   12. TABLET
+======================================== */
+
+@media (min-width: 768px) and (max-width: 1032px) {
+    .pbp-app .pbp-shell {
+        grid-template-columns: 76px minmax(0, 1fr);
+    }
+
+    .pbp-app .pbp-sidebar {
+        padding: 20px 12px;
+    }
+
+    .pbp-app .pbp-nav-item {
+        justify-content: center;
+        gap: 0;
+        padding: 12px;
+        min-height: 50px;
+    }
+
+    .pbp-nav-item span {
+        display: none;
+    }
+
+    .pbp-nav-item svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .pbp-page {
+        padding: 37px 28px 70px;
+    }
+}
+
+/* ========================================
+   13. MOBILE
+======================================== */
+
+@media (max-width: 767px) {
+    .pbp-app .pbp-global-header {
+        flex-basis: 58px;
+        height: 58px;
+        min-height: 58px;
+        padding: 0 17px;
+    }
+
+    .pbp-app .pbp-brand {
+        gap: 8px;
+        font-size: 15px;
+    }
+
+    .pbp-brand svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .pbp-desktop-account {
+        display: none;
+    }
+
+    .pbp-mobile-account {
+        position: relative;
+        display: block;
+        flex-shrink: 0;
+    }
+
+    .pbp-account-trigger {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        padding: 3px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+    }
+
+    .pbp-account-trigger:hover,
+    .pbp-account-trigger[aria-expanded="true"] {
+        background: var(--pbp-soft);
+    }
+
+    .pbp-account-popup {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 30;
+        width: 190px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--sub);
+        box-shadow: 0 12px 30px #243b5326;
+    }
+
+    .pbp-account-popup-name {
+        padding: 14px;
+        overflow: hidden;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .pbp-account-popup button {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        width: 100%;
+        padding: 13px 14px;
+        border: 0;
+        background: transparent;
+        color: var(--system-text);
+        font-size: 12px;
+        text-align: left;
+    }
+
+    .pbp-account-popup button:hover {
+        background: var(--pbp-soft);
+    }
+
+    .pbp-app .pbp-shell {
+        display: block;
+        width: 100%;
+        min-height: 0;
+        padding: 0;
+    }
+
+    .pbp-app .pbp-sidebar {
+        position: fixed;
+        z-index: 15;
+        top: auto;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: calc(65px + env(safe-area-inset-bottom));
+        padding: 5px 8px env(safe-area-inset-bottom);
+        border-top: 1px solid var(--border);
+        border-right: 0;
+        background: var(--sub);
+    }
+
+    .pbp-navigation {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        gap: 4px;
+        width: 100%;
+        height: 100%;
+    }
+
+    .pbp-app .pbp-nav-item {
+        flex: 1;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 4px;
+        width: auto;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        margin: 0;
+        padding: 6px 3px;
+        font-size: 10px;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .pbp-nav-item span {
+        display: block;
+        width: 100%;
+        text-align: center;
+    }
+
+    .pbp-nav-item svg {
+        width: 20px;
+        height: 20px;
+    }
+
+    .pbp-app .pbp-content {
+        height: 100%;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .pbp-page {
+        max-width: 100%;
+        padding: 28px 18px calc(100px + env(safe-area-inset-bottom));
+    }
+
+    .pbp-home-toolbar {
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 23px;
+    }
+
+    .pbp-home-heading {
+        flex: 1;
+    }
+
+    .pbp-home-heading h1 {
+        font-size: 23px;
+    }
+
+    .pbp-home-actions {
+        display: contents;
+    }
+
+    .pbp-room-search {
+        order: 3;
+        width: 100%;
+        height: 40px;
+    }
+
+    .pbp-app .pbp-new-room-button {
+        order: 2;
+        height: 37px;
+        min-height: 37px;
+        padding: 0 12px;
+    }
+
+    .pbp-home-section {
+        margin-bottom: 25px;
+    }
+
+    .pbp-home-section-heading h2 {
+        font-size: 14px;
+    }
+
+    .pbp-room-grid {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .pbp-room-card-main {
+        gap: 12px;
+        min-height: 100px;
+        padding: 12px;
+    }
+
+    .pbp-room-card.has-invite .pbp-room-card-main {
+        padding-right: 51px;
+    }
+
+    .pbp-room-cover {
+        flex-basis: 72px;
+        width: 72px;
+        height: 72px;
+        border-radius: 9px;
+    }
+
+    .pbp-room-info {
+        gap: 6px;
+    }
+
+    .pbp-room-name {
+        font-size: 14px;
+    }
+
+    .pbp-room-preview {
+        font-size: 11px;
+    }
+
+    .pbp-room-meta {
+        gap: 5px 8px;
+        font-size: 10px;
+    }
+
+    .pbp-room-invite-button {
+        right: 9px;
+        bottom: 10px;
+        width: 34px;
+        height: 34px;
+        min-height: 34px;
+        padding: 0;
+    }
+
+    .pbp-room-invite-button span {
+        display: none;
+    }
+
+    .pbp-invite-panel {
+        padding: 15px;
+    }
+
+    .pbp-invite-item {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 11px;
+        padding: 13px;
+    }
+
+    .pbp-invite-actions {
+        width: 100%;
+    }
+
+    .pbp-invite-actions button {
+        flex: 1;
+    }
+
+    .pbp-app-room .pbp-content-room {
+        height: 100%;
+        padding: 0;
+    }
+}
+
+/* ========================================
+   14. SMALL MOBILE
+======================================== */
+
+@media (max-width: 360px) {
+    .pbp-room-cover {
+        flex-basis: 62px;
+        width: 62px;
+        height: 62px;
+    }
+
+    .pbp-room-card-main {
+        gap: 9px;
+    }
+
+    .pbp-room-date {
+        font-size: 9px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pbp-nav-item,
+    .pbp-room-card {
+        transition: none;
+    }
+}

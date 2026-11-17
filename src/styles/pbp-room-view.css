@@ -1,0 +1,1322 @@
+/* ========================================
+   01. ROOM LAYOUT
+======================================== */
+
+.room-view.pbp-room-view {
+    --pbp-rp-accent: #527ec2;
+    --pbp-rp-muted: color-mix(in srgb, var(--system-text) 55%, var(--sub));
+    --pbp-rp-soft: color-mix(in srgb, var(--main) 60%, var(--sub));
+
+    display: grid;
+    grid-template-columns: minmax(0, var(--pbp-scene-width, 62%)) 6px minmax(0, 1fr);
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: var(--main);
+}
+
+.room-view.pbp-room-view.pbp-scene-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.pbp-scene-collapsed .pbp-scene-stage,
+.pbp-scene-collapsed .pbp-scene-resizer {
+    display: none;
+}
+
+/* ========================================
+   02. SCENE IMAGE
+======================================== */
+
+.pbp-scene-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    isolation: isolate;
+    background: #1d3042;
+}
+
+.pbp-scene-blur {
+    position: absolute;
+    inset: -32px;
+    z-index: -1;
+    width: calc(100% + 64px);
+    height: calc(100% + 64px);
+    object-fit: cover;
+    filter: blur(28px) brightness(0.57);
+    opacity: 0.95;
+    pointer-events: none;
+}
+
+.pbp-scene-image {
+    position: relative;
+    display: block;
+    max-width: calc(100% - 36px);
+    max-height: calc(100% - 70px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    box-shadow: 0 10px 45px #06152455;
+}
+
+.pbp-scene-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    color: #a6bbd2;
+    font-size: 12px;
+}
+
+.pbp-scene-back {
+    position: absolute;
+    top: 18px;
+    left: 20px;
+    z-index: 3;
+    display: grid;
+    place-items: center;
+    width: 41px;
+    height: 41px;
+    padding: 0;
+    border: 1px solid #ffffff55;
+    border-radius: 11px;
+    background: #20374abb;
+    color: #ffffff;
+    backdrop-filter: blur(6px);
+}
+
+.pbp-scene-back:hover {
+    background: #20374a;
+}
+
+.pbp-scene-actions {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    z-index: 3;
+    display: flex;
+    gap: 6px;
+}
+
+.pbp-scene-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 33px;
+    padding: 7px 10px;
+    border: 1px solid #ffffff55;
+    border-radius: 8px;
+    background: #20374acc;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 650;
+    backdrop-filter: blur(6px);
+}
+
+.pbp-scene-actions button:hover {
+    background: #20374a;
+}
+
+/* ========================================
+   03. RESIZER
+======================================== */
+
+.pbp-scene-resizer {
+    position: relative;
+    z-index: 4;
+    width: 6px;
+    height: 100%;
+    background: var(--border);
+    cursor: col-resize;
+    touch-action: none;
+}
+
+.pbp-scene-resizer:hover,
+.pbp-scene-resizer:focus-visible {
+    background: var(--pbp-rp-accent);
+}
+
+.pbp-scene-resizer::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 36px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--system-text) 35%, transparent);
+    transform: translate(-50%, -50%);
+}
+
+/* ========================================
+   04. LOG PANEL / HEADER
+======================================== */
+
+.pbp-rp-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--main);
+}
+
+.pbp-rp-panel .pbp-rp-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 62px;
+    width: 100%;
+    height: 62px;
+    min-height: 62px;
+    padding: 0 17px;
+    border-bottom: 1px solid var(--border);
+    background: var(--sub);
+}
+
+.pbp-rp-title {
+    flex: 1;
+    min-width: 0;
+}
+
+.pbp-rp-title h1 {
+    margin: 0;
+    overflow: hidden;
+    color: var(--system-text);
+    font-size: 14px;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-rp-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.pbp-rp-header .icon-button {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--system-text);
+}
+
+.pbp-rp-header .icon-button:hover {
+    background: var(--pbp-rp-soft);
+}
+
+.pbp-rp-mobile-back {
+    display: none !important;
+}
+
+/* ========================================
+   05. LOG SCROLL
+======================================== */
+
+.pbp-rp-panel .pbp-rp-log {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--main);
+    overscroll-behavior: contain;
+    scrollbar-color: var(--border) var(--main);
+}
+
+.pbp-rp-reading {
+    width: 100%;
+    min-width: 0;
+    padding: 28px clamp(17px, 2.5vw, 42px) 50px;
+}
+
+.pbp-rp-reading-title {
+    margin: 0 0 24px;
+    text-align: center;
+}
+
+.pbp-rp-reading-title h2 {
+    margin: 0;
+    color: var(--system-text);
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.045em;
+}
+
+.pbp-rp-date {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 22px 0 14px;
+    color: var(--pbp-rp-muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pbp-rp-date::before,
+.pbp-rp-date::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+
+/* ========================================
+   06. RP MESSAGE
+======================================== */
+
+.pbp-rp-message {
+    position: relative;
+    display: block;
+    margin: 0 0 7px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow-wrap: anywhere;
+}
+
+.pbp-rp-character-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+}
+
+.pbp-rp-portrait-button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.pbp-rp-portrait-button .avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 7px;
+    object-fit: cover;
+}
+
+.pbp-rp-character-column {
+    min-width: 0;
+}
+
+.pbp-rp-message-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 18px;
+    margin: 0 0 5px;
+}
+
+.pbp-rp-message-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--system-text);
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.pbp-rp-message-time {
+    flex-shrink: 0;
+    color: color-mix(in srgb, var(--system-text) 50%, var(--main));
+    font-size: 10px;
+    font-weight: 400;
+    white-space: nowrap;
+}
+
+/* ========================================
+   07. CHARACTER BUBBLE
+======================================== */
+
+.pbp-rp-message-bubble {
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-left: 2px solid color-mix(in srgb, var(--system-text) 45%, var(--border));
+    border-radius: 5px;
+    background: var(--sub);
+}
+
+.pbp-rp-message-content {
+    min-width: 0;
+}
+
+.pbp-rp-message-body {
+    color: var(--body-text);
+    font-size: 13px;
+    line-height: 1.85;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.pbp-rp-message-body p {
+    margin: 0 0 9px;
+}
+
+.pbp-rp-message-body p:last-child {
+    margin-bottom: 0;
+}
+
+.pbp-rp-message-body img {
+    max-width: 100%;
+    height: auto;
+}
+
+.pbp-rp-edited {
+    display: block;
+    margin-top: 8px;
+    color: color-mix(in srgb, var(--system-text) 52%, var(--main));
+    font-size: 10px;
+    text-align: right;
+}
+
+/* ========================================
+   08. NARRATION
+======================================== */
+
+.pbp-rp-message.pbp-rp-narration {
+    position: relative;
+    margin: 22px 0;
+    padding: 7px 0 4px 14px;
+    border: 0;
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.pbp-rp-narration-content {
+    position: relative;
+    min-width: 0;
+}
+
+.pbp-rp-narration .pbp-rp-message-content {
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+.pbp-rp-narration .pbp-rp-message-body {
+    color: color-mix(in srgb, var(--body-text) 82%, var(--main));
+    font-size: 13px;
+    line-height: 1.9;
+    letter-spacing: -0.01em;
+}
+
+.pbp-rp-narration-time {
+    display: block;
+    margin-top: 9px;
+    color: color-mix(in srgb, var(--system-text) 48%, var(--main));
+    font-size: 10px;
+    text-align: right;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.pbp-rp-narration:hover .pbp-rp-narration-time,
+.pbp-rp-narration:focus-within .pbp-rp-narration-time {
+    opacity: 1;
+}
+
+/* ========================================
+   09. INLINE MESSAGE ACTIONS
+======================================== */
+
+.pbp-rp-inline-actions {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    height: 22px;
+    margin: 6px 0 0 50px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.pbp-rp-inline-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 22px;
+    padding: 0 2px;
+    border: 0;
+    background: transparent;
+    color: color-mix(in srgb, var(--system-text) 65%, var(--main));
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.pbp-rp-inline-actions button:hover {
+    color: var(--system-text);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.pbp-rp-inline-actions button.danger:hover {
+    color: #ba4c4c;
+}
+
+.pbp-rp-message:hover .pbp-rp-inline-actions,
+.pbp-rp-message:focus-within .pbp-rp-inline-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.pbp-rp-narration .pbp-rp-inline-actions {
+    margin-left: 0;
+}
+
+/* ========================================
+   10. TOUCH DEVICE
+======================================== */
+
+@media (hover: none) {
+    .pbp-rp-inline-actions {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    .pbp-rp-narration-time {
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   11. MOBILE
+======================================== */
+
+@media (max-width: 767px) {
+    .pbp-rp-character-row {
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 9px;
+    }
+
+    .pbp-rp-portrait-button,
+    .pbp-rp-portrait-button .avatar {
+        width: 38px !important;
+        height: 38px !important;
+    }
+
+    .pbp-rp-message-bubble {
+        padding: 10px 12px;
+    }
+
+    .pbp-rp-message-body,
+    .pbp-rp-narration .pbp-rp-message-body {
+        font-size: 13px;
+        line-height: 1.85;
+    }
+
+    .pbp-rp-inline-actions {
+        margin-left: 47px;
+    }
+
+    .pbp-rp-narration .pbp-rp-inline-actions {
+        margin-left: 0;
+    }
+
+    .pbp-rp-message.pbp-rp-narration {
+        margin: 20px 0;
+        padding: 6px 0 3px 13px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pbp-rp-inline-actions,
+    .pbp-rp-narration-time {
+        transition: none;
+    }
+}
+
+/* ========================================
+   09. MESSAGE IMAGE
+======================================== */
+
+.pbp-rp-image-button {
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0 0 13px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.pbp-rp-message-image {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 350px;
+    object-fit: contain;
+}
+
+.pbp-rp-image-viewer {
+    display: grid;
+    place-items: center;
+    padding: 10px;
+}
+
+.pbp-rp-image-viewer img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 75dvh;
+    object-fit: contain;
+}
+
+.modal:has(.pbp-rp-image-viewer) {
+    width: min(95vw, 1000px);
+}
+
+/* ========================================
+   10. COMPOSER
+======================================== */
+
+.pbp-composer-wrap {
+    position: relative;
+    z-index: 6;
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    background: var(--sub);
+}
+
+.pbp-composer-compact {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 61px;
+    padding: 9px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--sub);
+}
+
+.pbp-composer-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 35px;
+    height: 35px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--system-text);
+}
+
+.pbp-composer-icon:hover {
+    background: var(--pbp-rp-soft);
+}
+
+.pbp-composer-placeholder {
+    flex: 1;
+    min-width: 0;
+    height: 39px;
+    padding: 0 13px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--pbp-rp-muted);
+    font-size: 12px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-composer-send {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border: 1px solid var(--pbp-rp-accent);
+    border-radius: 9px;
+    background: var(--pbp-rp-accent);
+    color: #ffffff;
+}
+
+.pbp-composer-send:hover {
+    background: #406caa;
+}
+
+.pbp-composer-send:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* ========================================
+   11. EXPANDED COMPOSER
+======================================== */
+
+.pbp-composer-wrap .pbp-composer-expanded {
+    width: 100%;
+    padding: 13px 15px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--sub);
+}
+
+.pbp-composer-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 11px;
+}
+
+.pbp-composer-character {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--system-text);
+    text-align: left;
+}
+
+.pbp-composer-character .avatar {
+    width: 49px !important;
+    height: 49px !important;
+    flex-shrink: 0;
+    border-radius: 9px;
+}
+
+.pbp-composer-character strong {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-composer-identity {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+}
+
+.pbp-narration-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 49px;
+    height: 49px;
+    border-radius: 9px;
+    background: var(--pbp-rp-soft);
+    color: var(--system-text);
+    font-weight: 800;
+}
+
+.pbp-narration-toggle {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 7px 11px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--system-text);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.pbp-narration-toggle.active {
+    border-color: var(--pbp-rp-accent);
+    background: var(--pbp-rp-accent);
+    color: #ffffff;
+}
+
+.pbp-composer-input-box {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--sub);
+}
+
+.pbp-composer-expanded .pbp-composer-input-box textarea {
+    display: block;
+    width: 100%;
+    height: clamp(110px, 22dvh, 210px);
+    min-height: 110px;
+    max-height: 230px;
+    margin: 0;
+    padding: 13px 15px;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: var(--body-text);
+    font-size: 14px;
+    line-height: 1.8;
+    resize: none;
+}
+
+.pbp-composer-expanded .pbp-composer-input-box textarea:focus {
+    border: 0;
+    outline: none;
+}
+
+.pbp-composer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    padding: 6px 9px 9px;
+}
+
+.pbp-composer-shortcut {
+    flex: 1;
+    color: var(--pbp-rp-muted);
+    font-size: 10px;
+    text-align: right;
+}
+
+.pbp-composer-attachment {
+    position: relative;
+    display: inline-flex;
+    max-width: 160px;
+    margin: 10px 0 0 12px;
+}
+
+.pbp-composer-attachment img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 160px;
+    max-height: 110px;
+    object-fit: contain;
+}
+
+.pbp-composer-attachment button {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    place-items: center;
+    width: 23px;
+    height: 23px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--sub);
+    color: var(--system-text);
+}
+
+/* ========================================
+   12. NARRATION COMPOSER
+======================================== */
+
+.pbp-composer-expanded.is-narration {
+    background: color-mix(in srgb, var(--main) 52%, var(--sub));
+}
+
+.pbp-composer-expanded.is-narration .pbp-composer-input-box {
+    background: var(--sub);
+}
+
+/* ========================================
+   13. TWITTER COMPOSER
+======================================== */
+
+.pbp-composer-twitter:has(.pbp-composer-floating) {
+    height: 0;
+}
+
+.pbp-composer-floating {
+    position: absolute;
+    right: 21px;
+    bottom: 24px;
+    z-index: 8;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.pbp-composer-fab {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--pbp-rp-accent);
+    color: #ffffff;
+    box-shadow: 0 8px 25px #183b663d;
+}
+
+.pbp-composer-draft {
+    max-width: 200px;
+    padding: 11px 13px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--sub);
+    color: var(--system-text);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ========================================
+   14. MOBILE SCENE
+======================================== */
+
+.pbp-mobile-scene {
+    display: none;
+}
+
+/* ========================================
+   15. MOBILE
+======================================== */
+
+@media (max-width: 767px) {
+    .room-view.pbp-room-view {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .pbp-scene-stage,
+    .pbp-scene-resizer {
+        display: none;
+    }
+
+    .pbp-rp-panel {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .pbp-rp-panel .pbp-rp-header {
+        flex-basis: 62px;
+        height: 62px;
+        min-height: 62px;
+        padding: 0 11px;
+        gap: 5px;
+    }
+
+    .pbp-rp-mobile-back {
+        display: grid !important;
+    }
+
+    .pbp-rp-restore-scene {
+        display: none !important;
+    }
+
+    .pbp-rp-title h1 {
+        font-size: 13px;
+    }
+
+    .pbp-rp-header-actions {
+        gap: 0;
+    }
+
+    .pbp-rp-header .icon-button {
+        width: 32px;
+        height: 35px;
+    }
+
+    .pbp-mobile-scene {
+        display: block;
+        flex: 0 0 auto;
+        width: 100%;
+        border-bottom: 1px solid var(--border);
+        background: var(--sub);
+    }
+
+    .pbp-mobile-scene-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 7px;
+        width: 100%;
+        height: 35px;
+        padding: 0 15px;
+        border: 0;
+        background: transparent;
+        color: var(--system-text);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .pbp-mobile-scene-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        max-height: 38dvh;
+        overflow: hidden;
+        background: #1d3042;
+        color: #bccddd;
+        font-size: 11px;
+    }
+
+    .pbp-mobile-scene-image img {
+        display: block;
+        width: auto;
+        height: auto;
+        max-width: 100%;
+        max-height: 38dvh;
+        object-fit: contain;
+    }
+
+    .pbp-rp-reading {
+        padding: 24px 17px 35px;
+    }
+
+    .pbp-rp-reading-title {
+        margin-bottom: 18px;
+    }
+
+    .pbp-rp-reading-title h2 {
+        font-size: 21px;
+    }
+
+    .pbp-rp-message {
+        padding: 17px 2px 20px;
+    }
+
+    .pbp-rp-message-body,
+    .pbp-rp-narration .pbp-rp-message-body {
+        font-size: 13px;
+        line-height: 1.9;
+    }
+
+    .pbp-rp-message-name {
+        font-size: 13px;
+    }
+
+    .pbp-rp-message-image {
+        max-height: 280px;
+    }
+
+    .pbp-rp-message.pbp-rp-narration {
+        padding: 13px 15px 16px;
+    }
+
+    .pbp-composer-wrap .pbp-composer-expanded {
+        padding: 10px 12px 11px;
+    }
+
+    .pbp-composer-expanded .pbp-composer-input-box textarea {
+        height: clamp(90px, 18dvh, 170px);
+        min-height: 90px;
+    }
+
+    .pbp-composer-shortcut {
+        display: none;
+    }
+
+    .pbp-rp-message-tools {
+        top: 10px;
+        right: 3px;
+    }
+}
+
+/* ========================================
+   16. TOUCH ACTIONS
+======================================== */
+
+@media (hover: none) {
+    .pbp-rp-message-tools {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .pbp-rp-menu-trigger {
+        width: 29px;
+        height: 29px;
+    }
+}
+
+/* ========================================
+   17. REDUCED MOTION
+======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .pbp-rp-message-tools {
+        transition: none;
+    }
+}
+
+
+/* ========================================
+   COMPACT NARRATION
+======================================== */
+
+.pbp-rp-message.pbp-rp-narration {
+    position: relative;
+    z-index: 1;
+    min-height: 0;
+    margin: 10px 0 13px;
+    padding: 2px 0 2px 12px;
+    border: 0;
+    border-left: 2px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.pbp-rp-narration-content {
+    position: relative;
+    min-width: 0;
+}
+
+.pbp-rp-narration .pbp-rp-message-content {
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+.pbp-rp-narration .pbp-rp-message-body {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.7;
+}
+
+.pbp-rp-narration .pbp-rp-message-body p {
+    margin: 0 0 8px;
+}
+
+.pbp-rp-narration .pbp-rp-message-body p:last-child {
+    margin-bottom: 0;
+}
+
+.pbp-rp-narration-time {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: block;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.pbp-rp-narration:hover .pbp-rp-narration-time,
+.pbp-rp-narration:focus-within .pbp-rp-narration-time {
+    opacity: 1;
+}
+
+/* 수정·삭제 버튼이 평소 높이를 차지하지 않도록 처리 */
+
+.pbp-rp-message .pbp-rp-inline-actions {
+    position: absolute;
+    top: 100%;
+    left: 50px;
+    z-index: 5;
+    height: auto;
+    min-height: 22px;
+    margin: 0;
+    padding: 2px 5px;
+    border-radius: 5px;
+    background: var(--main);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.pbp-rp-narration .pbp-rp-inline-actions {
+    left: 12px;
+}
+
+.pbp-rp-message:hover {
+    z-index: 6;
+}
+
+.pbp-rp-message:hover .pbp-rp-inline-actions,
+.pbp-rp-message:focus-within .pbp-rp-inline-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+}
+
+@media (hover: none) {
+    .pbp-rp-message .pbp-rp-inline-actions {
+        position: static;
+        height: auto;
+        margin: 4px 0 0 50px;
+        padding: 0;
+        opacity: 1;
+        visibility: visible;
+        background: transparent;
+        pointer-events: auto;
+    }
+
+    .pbp-rp-narration .pbp-rp-inline-actions {
+        margin-left: 0;
+    }
+
+    .pbp-rp-narration-time {
+        position: static;
+        display: none;
+    }
+}
+
+
+/* ========================================
+   COMPACT RP MESSAGE
+======================================== */
+
+.pbp-rp-message:not(.pbp-rp-narration) {
+    margin: 0 0 10px;
+    padding: 0;
+}
+
+.pbp-rp-character-row {
+    align-items: start;
+    gap: 9px;
+}
+
+.pbp-rp-message-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    min-height: 0;
+    margin-bottom: 4px;
+}
+
+.pbp-rp-message-name {
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+.pbp-rp-message-time {
+    margin-left: auto;
+}
+
+.pbp-rp-message-bubble {
+    padding: 8px 11px;
+}
+
+.pbp-rp-message-body {
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.pbp-rp-message-body p {
+    margin: 0 0 5px;
+}
+
+.pbp-rp-message-body p:last-child {
+    margin-bottom: 0;
+}
+
+.pbp-rp-message-header .pbp-rp-edited {
+    display: inline;
+    flex-shrink: 0;
+    margin: 0;
+    color: color-mix(in srgb, var(--system-text) 50%, var(--main));
+    font-size: 10px;
+    line-height: 1;
+}
+
+/* ========================================
+   COMPACT RESIZABLE COMPOSER
+======================================== */
+
+.pbp-composer-wrap .pbp-composer-expanded {
+    padding: 8px 12px 10px;
+}
+
+.pbp-composer-heading {
+    gap: 8px;
+    margin-bottom: 7px;
+}
+
+.pbp-composer-character .avatar {
+    width: 34px !important;
+    height: 34px !important;
+}
+
+.pbp-narration-icon {
+    width: 34px;
+    height: 34px;
+}
+
+.pbp-composer-expanded .pbp-composer-input-box textarea {
+    display: block;
+    width: 100%;
+    height: 62px;
+    min-height: 54px;
+    max-height: 45dvh;
+    padding: 9px 12px;
+    overflow-y: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--body-text);
+    font-size: 13px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.pbp-composer-footer {
+    gap: 8px;
+    padding: 4px 8px 6px;
+}
+
+@media (max-width: 767px) {
+    .pbp-rp-message:not(.pbp-rp-narration) {
+        margin-bottom: 9px;
+        padding: 0;
+    }
+
+    .pbp-rp-message-bubble {
+        padding: 8px 10px;
+    }
+
+    .pbp-composer-expanded .pbp-composer-input-box textarea {
+        height: 56px;
+        min-height: 48px;
+        max-height: 40dvh;
+    }
+}

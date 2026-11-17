@@ -8,19 +8,26 @@ import Avatar from './Avatar';
 const IMAGE_BUCKET = 'pbp-character-images';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const DEFAULT_CHARACTER_COLOR = '#527EC2';
+const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export default function CharacterForm({ character, userId, onClose, onSaved, onError }) {
     const [name, setName] = useState(character?.character_name || '');
     const [portrait, setPortrait] = useState(character?.character_portrait || '');
+    const [characterColor, setCharacterColor] = useState(character?.character_color || DEFAULT_CHARACTER_COLOR);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState('');
     const [saving, setSaving] = useState(false);
 
     const isEdit = Boolean(character?.character_id);
+    const normalizedColor = characterColor.trim().toUpperCase();
+    const validColor = COLOR_PATTERN.test(normalizedColor);
+    const previewColor = validColor ? normalizedColor : DEFAULT_CHARACTER_COLOR;
 
     useEffect(() => {
         setName(character?.character_name || '');
         setPortrait(character?.character_portrait || '');
+        setCharacterColor(character?.character_color || DEFAULT_CHARACTER_COLOR);
         setImageFile(null);
     }, [character]);
 
@@ -46,7 +53,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
             return;
         }
 
-        if (file.size > MAX_IMAGE_SIZE) {
+        if (file.size > MAX_FILE_SIZE) {
             onError('이미지는 최대 5MB까지 등록할 수 있습니다.');
             event.target.value = '';
             return;
@@ -79,7 +86,11 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
         if (error) throw error;
 
         const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(path);
-        return { path, url: data.publicUrl };
+
+        return {
+            path,
+            url: data.publicUrl
+        };
     }
 
     async function handleSubmit(event) {
@@ -88,9 +99,15 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
         if (saving) return;
 
         const characterName = name.trim();
+        const color = characterColor.trim().toUpperCase();
 
         if (!characterName) {
             onError('캐릭터 이름을 입력해 주세요.');
+            return;
+        }
+
+        if (!COLOR_PATTERN.test(color)) {
+            onError('색상은 #RRGGBB 형식의 HEX 코드로 입력해 주세요.');
             return;
         }
 
@@ -110,7 +127,8 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
 
             const values = {
                 character_name: characterName,
-                character_portrait: portraitUrl || null
+                character_portrait: portraitUrl || null,
+                character_color: color
             };
 
             if (!isEdit) {
@@ -168,46 +186,127 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
                     required
                 />
 
-                <label htmlFor="character-image">캐릭터 인장</label>
+                <label>캐릭터 인장</label>
 
                 <div className="profile-row">
-                    <Avatar src={imagePreview || portrait} name={name} size={80} />
+                    <Avatar
+                        src={imagePreview || portrait}
+                        name={name}
+                        size={80}
+                    />
 
                     <div className="field-stack">
-                        <label className="secondary" htmlFor="character-image">
-                            <ImagePlus size={17} /> 이미지 선택
-                        </label>
-                        <input
-                            id="character-image"
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp,image/gif"
-                            onChange={handleImageChange}
-                            disabled={saving}
-                        />
+                        <div className="character-image-actions">
+                            <label className="secondary" htmlFor="character-image">
+                                <ImagePlus size={17} />
+                                이미지 선택
+                            </label>
 
-                        {(imagePreview || portrait) && (
-                            <button className="secondary" type="button" onClick={removePortrait} disabled={saving}>
-                                <Trash2 size={16} /> 인장 제거
-                            </button>
-                        )}
+                            <input
+                                id="character-image"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={handleImageChange}
+                                disabled={saving}
+                                hidden
+                            />
+
+                            {(imagePreview || portrait) && (
+                                <button
+                                    className="secondary"
+                                    type="button"
+                                    onClick={removePortrait}
+                                    disabled={saving}
+                                >
+                                    <Trash2 size={16} />
+                                    인장 제거
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                <p className="notice">인장은 선택 사항이며, JPG·PNG·WebP·GIF 파일을 최대 5MB까지 등록할 수 있습니다.</p>
+                <p className="notice">
+                    인장은 선택 사항이며, JPG·PNG·WebP·GIF 파일을 최대 5MB까지 등록할 수 있습니다.
+                </p>
+
+                <div className="pbp-character-color-section">
+                    <label htmlFor="character-color-hex">RP 강조 색상</label>
+
+                    <div className="pbp-character-color-controls">
+                        <input
+                            id="character-color-picker"
+                            className="pbp-character-color-picker"
+                            type="color"
+                            value={previewColor}
+                            onChange={event => setCharacterColor(event.target.value.toUpperCase())}
+                            disabled={saving}
+                            aria-label="캐릭터 강조 색상 선택"
+                        />
+
+                        <input
+                            id="character-color-hex"
+                            className="pbp-character-color-hex"
+                            type="text"
+                            maxLength={7}
+                            value={characterColor}
+                            onChange={event => setCharacterColor(event.target.value.toUpperCase())}
+                            placeholder="#527EC2"
+                            spellCheck={false}
+                            disabled={saving}
+                        />
+
+                        <button
+                            type="button"
+                            className="secondary pbp-character-color-reset"
+                            onClick={() => setCharacterColor(DEFAULT_CHARACTER_COLOR)}
+                            disabled={saving}
+                        >
+                            초기화
+                        </button>
+                    </div>
+
+                    <div
+                        className="pbp-character-color-preview"
+                        style={{ '--character-preview-color': previewColor }}
+                    >
+                        <strong>{name.trim() || '캐릭터 이름'}</strong>
+
+                        <div className="pbp-character-color-preview-bubble">
+                            "RP 대사 미리보기입니다."
+                        </div>
+                    </div>
+                </div>
 
                 <div className="form-actions">
                     {isEdit && (
-                        <button className="danger" type="button" onClick={handleDelete} disabled={saving}>
-                            <Trash2 size={17} /> 삭제
+                        <button
+                            className="danger"
+                            type="button"
+                            onClick={handleDelete}
+                            disabled={saving}
+                        >
+                            <Trash2 size={17} />
+                            삭제
                         </button>
                     )}
 
-                    <button className="secondary" type="button" onClick={onClose} disabled={saving}>
+                    <button
+                        className="secondary"
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                    >
                         취소
                     </button>
 
-                    <button className="primary" type="submit" disabled={saving || !name.trim()}>
-                        <Save size={17} /> {saving ? '저장 중...' : isEdit ? '수정 저장' : '캐릭터 등록'}
+                    <button
+                        className="primary"
+                        type="submit"
+                        disabled={saving || !name.trim() || !validColor}
+                    >
+                        <Save size={17} />
+                        {saving ? '저장 중...' : isEdit ? '수정 저장' : '캐릭터 등록'}
                     </button>
                 </div>
             </form>

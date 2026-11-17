@@ -33,6 +33,7 @@ export default function AppRouter() {
     const [room, setRoom] = useState(null);
     const [roomFormOpen, setRoomFormOpen] = useState(false);
     const [joiningRoomId, setJoiningRoomId] = useState(null);
+    const [accountMenuOpen, setAccountMenuOpen] = useState(false);
 
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -138,6 +139,7 @@ export default function AppRouter() {
             setRoom(null);
             setView('rooms');
             setRoomFormOpen(false);
+            setAccountMenuOpen(false);
         } catch (err) {
             setError(err.message);
         }
@@ -147,6 +149,7 @@ export default function AppRouter() {
         setView(nextView);
         setRoom(null);
         setError('');
+        setAccountMenuOpen(false);
     }
 
     async function selectRoom(selectedRoom) {
@@ -163,14 +166,17 @@ export default function AppRouter() {
         try {
             if (!selectedRoom.is_member) {
                 await roomAction('join', { room_id: selectedRoom.room_id });
-                setRooms(previous => previous.map(item => item.room_id === selectedRoom.room_id
-                    ? { ...item, is_member: true, is_invited: false }
-                    : item
+
+                setRooms(previous => previous.map(item =>
+                    item.room_id === selectedRoom.room_id
+                        ? { ...item, is_member: true, is_invited: false }
+                        : item
                 ));
             }
 
             setRoom({ ...selectedRoom, is_member: true });
             setView('rooms');
+            setAccountMenuOpen(false);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -211,8 +217,12 @@ export default function AppRouter() {
     };
 
     const isAdmin = profile?.role === 1;
+    const isRoomOpen = view === 'rooms' && Boolean(room);
+    const userName = profile?.user_name || 'User';
 
-    if (loading) return <div className="center-screen">연결 확인 중...</div>;
+    if (loading) {
+        return <div className="center-screen">연결 확인 중...</div>;
+    }
 
     if (!isConfigured) {
         return (
@@ -224,98 +234,162 @@ export default function AppRouter() {
         );
     }
 
-    if (!session) return <Login onLogin={login} error={error} busy={busy} />;
+    if (!session) {
+        return <Login onLogin={login} error={error} busy={busy} />;
+    }
 
     return (
-        <div className="app" style={theme}>
-            <header className="topbar">
-                <button className="brand" onClick={() => navigate('rooms')}>
-                    <BookOpen size={23} />
-                    DIALOGUE
-                </button>
-
-                <div className="top-actions">
-                    <span className="user-label">{profile?.user_name || 'User'}</span>
-                    <Avatar src={profile?.user_portrait} name={profile?.user_name} size={34} />
-                    <button className="icon-button" title="로그아웃" onClick={logout}>
-                        <LogOut size={19} />
-                    </button>
-                </div>
-            </header>
-
-            <div className="layout">
-                <aside className="sidebar">
-                    <button className={view === 'rooms' ? 'nav active' : 'nav'} onClick={() => navigate('rooms')}>
-                        <MessageSquare size={19} /> RP방
+        <div className={`app pbp-app${isRoomOpen ? ' pbp-app-room' : ''}`} style={theme}>
+            {!isRoomOpen && (
+                <header className="topbar pbp-global-header">
+                    <button className="brand pbp-brand" onClick={() => navigate('rooms')}>
+                        <BookOpen size={23} />
+                        <span>다이얼로그</span>
                     </button>
 
-                    <button className={view === 'characters' ? 'nav active' : 'nav'} onClick={() => navigate('characters')}>
-                        <Users size={19} /> 캐릭터
-                    </button>
+                    <div className="pbp-desktop-account">
+                        <Avatar src={profile?.user_portrait} name={userName} size={35} />
+                        <strong className="pbp-account-name">{userName}</strong>
 
-                    <button className={view === 'settings' ? 'nav active' : 'nav'} onClick={() => navigate('settings')}>
-                        <Settings size={19} /> 설정
-                    </button>
-
-                    {isAdmin && (
-                        <button className={view === 'admin' ? 'nav active' : 'nav'} onClick={() => navigate('admin')}>
-                            <Shield size={19} /> 관리자
+                        <button className="pbp-logout-button" onClick={logout}>
+                            <LogOut size={17} />
+                            로그아웃
                         </button>
-                    )}
-                </aside>
+                    </div>
 
-                <main className="content">
-                    {error && (
-                        <div className="alert">
-                            {error}
-                            <button onClick={() => setError('')}>닫기</button>
-                        </div>
-                    )}
+                    <div className="pbp-mobile-account">
+                        <button
+                            className="pbp-account-trigger"
+                            aria-label="계정 메뉴"
+                            aria-expanded={accountMenuOpen}
+                            onClick={() => setAccountMenuOpen(previous => !previous)}
+                        >
+                            <Avatar src={profile?.user_portrait} name={userName} size={32} />
+                        </button>
 
-                    {view === 'rooms' && !room && (
-                        <Rooms
-                            rooms={rooms}
-                            invites={invites}
-                            isAdmin={isAdmin}
-                            joiningRoomId={joiningRoomId}
-                            onSelect={selectRoom}
-                            onReload={reload}
-                            onError={setError}
-                        />
-                    )}
+                        {accountMenuOpen && (
+                            <div className="pbp-account-popup">
+                                <div className="pbp-account-popup-name">{userName}</div>
+                                <button onClick={logout}>
+                                    <LogOut size={16} />
+                                    로그아웃
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </header>
+            )}
 
-                    {view === 'rooms' && room && (
-                        <RoomView
-                            room={room}
-                            userId={session.user.id}
-                            characters={characters}
-                            preferences={preferences}
-                            onBack={closeRoom}
-                            onEdit={() => setRoomFormOpen(true)}
-                            onError={setError}
-                        />
-                    )}
+            <div className={`layout pbp-shell${isRoomOpen ? ' pbp-shell-room' : ''}`}>
+                {!isRoomOpen && (
+                    <aside className="sidebar pbp-sidebar">
+                        <nav className="pbp-navigation" aria-label="주 메뉴">
+                            <button
+                                className={`nav pbp-nav-item${view === 'rooms' ? ' active' : ''}`}
+                                onClick={() => navigate('rooms')}
+                                title="RP방"
+                            >
+                                <MessageSquare size={19} />
+                                <span>RP방</span>
+                            </button>
 
-                    {view === 'characters' && (
-                        <Characters characters={characters} userId={session.user.id} onReload={reload} onError={setError} />
-                    )}
+                            <button
+                                className={`nav pbp-nav-item${view === 'characters' ? ' active' : ''}`}
+                                onClick={() => navigate('characters')}
+                                title="캐릭터"
+                            >
+                                <Users size={19} />
+                                <span>캐릭터</span>
+                            </button>
 
-                    {view === 'settings' && (
-                        <SettingsPage
-                            profile={profile}
-                            preferences={preferences}
-                            userId={session.user.id}
-                            onSaved={reload}
-                            onError={setError}
-                        />
-                    )}
+                            <button
+                                className={`nav pbp-nav-item${view === 'settings' ? ' active' : ''}`}
+                                onClick={() => navigate('settings')}
+                                title="설정"
+                            >
+                                <Settings size={19} />
+                                <span>설정</span>
+                            </button>
 
-                    {view === 'admin' && isAdmin && <Admin onError={setError} />}
+                            {isAdmin && (
+                                <button
+                                    className={`nav pbp-nav-item${view === 'admin' ? ' active' : ''}`}
+                                    onClick={() => navigate('admin')}
+                                    title="관리자"
+                                >
+                                    <Shield size={19} />
+                                    <span>관리자</span>
+                                </button>
+                            )}
+                        </nav>
+                    </aside>
+                )}
+
+                <main className={`content pbp-content${isRoomOpen ? ' pbp-content-room' : ''}`}>
+                    <div className={isRoomOpen ? 'pbp-room-wrapper' : 'pbp-page'}>
+                        {error && (
+                            <div className="alert" role="alert">
+                                {error}
+                                <button onClick={() => setError('')}>닫기</button>
+                            </div>
+                        )}
+
+                        {view === 'rooms' && !room && (
+                            <Rooms
+                                rooms={rooms}
+                                invites={invites}
+                                isAdmin={isAdmin}
+                                joiningRoomId={joiningRoomId}
+                                onSelect={selectRoom}
+                                onReload={reload}
+                                onError={setError}
+                            />
+                        )}
+
+                        {view === 'rooms' && room && (
+                            <RoomView
+                                room={room}
+                                userId={session.user.id}
+                                characters={characters}
+                                preferences={preferences}
+                                onBack={closeRoom}
+                                onEdit={() => setRoomFormOpen(true)}
+                                onError={setError}
+                            />
+                        )}
+
+                        {view === 'characters' && (
+                            <Characters
+                                characters={characters}
+                                userId={session.user.id}
+                                onReload={reload}
+                                onError={setError}
+                            />
+                        )}
+
+                        {view === 'settings' && (
+                            <SettingsPage
+                                profile={profile}
+                                preferences={preferences}
+                                userId={session.user.id}
+                                onSaved={reload}
+                                onError={setError}
+                            />
+                        )}
+
+                        {view === 'admin' && isAdmin && (
+                            <Admin onError={setError} />
+                        )}
+                    </div>
                 </main>
             </div>
 
             {roomFormOpen && room && (
-                <RoomForm room={room} onClose={() => setRoomFormOpen(false)} onSaved={handleRoomSaved} />
+                <RoomForm
+                    room={room}
+                    onClose={() => setRoomFormOpen(false)}
+                    onSaved={handleRoomSaved}
+                />
             )}
         </div>
     );

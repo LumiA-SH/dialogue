@@ -1313,3 +1313,168 @@ textarea:focus {
     flex: 1;
   }
 }
+
+
+/* ========================================
+   CHARACTER COLOR SETTINGS
+======================================== */
+
+.pbp-character-color-section {
+  margin: 22px 0;
+}
+
+.pbp-character-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 9px;
+}
+
+.form-body input.pbp-character-color-picker {
+  flex: 0 0 45px;
+  width: 45px;
+  height: 43px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--sub);
+  cursor: pointer;
+}
+
+.form-body input.pbp-character-color-hex {
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  height: 43px;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.pbp-character-color-reset {
+  flex-shrink: 0;
+  height: 43px;
+}
+
+.pbp-character-color-preview {
+  margin-top: 15px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--main);
+}
+
+.pbp-character-color-preview > strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--character-preview-color);
+  font-size: 13px;
+}
+
+.pbp-character-color-preview-bubble {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--character-preview-color);
+  border-radius: 5px;
+  background: var(--sub);
+  color: var(--body-text);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+/* ========================================
+   CHARACTER IMAGE ACTIONS
+======================================== */
+
+.character-image-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.form-body .character-image-actions label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 13px;
+  cursor: pointer;
+}
+
+.character-image-actions .secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
+.character-image-actions svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.form-body input[type="file"][hidden] {
+  display: none;
+}
+
+/* ========================================
+   CHARACTER FORM BUTTONS
+======================================== */
+
+.form-body .form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.form-body .form-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 14px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.form-body .form-actions button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.form-body .form-actions .danger {
+  margin-right: auto;
+  border: 1px solid #e8baba;
+  background: #fff4f4;
+  color: #b54141;
+}
+
+.form-body .form-actions .danger:hover {
+  background: #ffe8e8;
+}
+
+@media (max-width: 420px) {
+  .form-body .form-actions {
+    gap: 6px;
+  }
+
+  .form-body .form-actions button {
+    padding: 0 10px;
+  }
+}

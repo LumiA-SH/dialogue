@@ -164,13 +164,25 @@ export default function Settings({ profile, preferences, userId, onSaved, onErro
 
                         <div className="field-stack">
                             <label htmlFor="profile-name">닉네임</label>
-                            <input id="profile-name" maxLength={24} required value={name} onChange={event => setName(event.target.value)} />
+                            <input id="profile-name" maxLength={24} required value={name} onChange={event => setName(event.target.value)}
+                            />
 
                             <label htmlFor="profile-image">인장 이미지</label>
-                            <input id="profile-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} disabled={saving} />
+                            <input
+                                id="profile-image"
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp,image/gif"
+                                onChange={handleImageChange}
+                                disabled={saving}
+                            />
 
                             {(imagePreview || portrait) && (
-                                <button className="secondary" type="button" onClick={() => { setImageFile(null); setPortrait(''); }} disabled={saving}>
+                                <button className="secondary" type="button" onClick={() => {
+                                        setImageFile(null);
+                                        setPortrait('');
+                                    }}
+                                    disabled={saving}
+                                >
                                     이미지 제거
                                 </button>
                             )}
@@ -182,19 +194,38 @@ export default function Settings({ profile, preferences, userId, onSaved, onErro
                     <h2>글쓰기 설정</h2>
 
                     <label htmlFor="input-style">입력 방식</label>
-                    <select id="input-style" value={form.input_style} onChange={event => setForm({ ...form, input_style: event.target.value })}>
+                    <select id="input-style"
+                        value={form.input_style}
+                        onChange={event => setForm({
+                            ...form,
+                            input_style: event.target.value
+                        })}
+                    >
                         <option value="messenger">메신저 방식</option>
                         <option value="twitter">트위터 방식</option>
                     </select>
 
                     <label htmlFor="send-shortcut">전송 단축키</label>
-                    <select id="send-shortcut" value={form.send_shortcut} onChange={event => setForm({ ...form, send_shortcut: event.target.value })}>
-                        <option value="shift_enter">Shift + Enter 줄바꿈</option>
-                        <option value="ctrl_enter">Ctrl + Enter 줄바꿈</option>
+                    <select id="send-shortcut"
+                        value={form.send_shortcut === 'alt_enter' ? 'alt_enter' : 'shift_enter'}
+                        onChange={event => setForm({
+                            ...form,
+                            send_shortcut: event.target.value
+                        })}
+                    >
+                        <option value="shift_enter">Shift + Enter (기본값)</option>
+                        <option value="alt_enter">Alt + Enter</option>
                     </select>
 
+                    <p className="muted">
+                        Enter는 줄바꿈이며, 선택한 단축키를 누르면 RP가 전송됩니다.
+                    </p>
+
                     <label className="checkbox-label">
-                        <input type="checkbox" checked={form.notification_enabled} onChange={event => setForm({ ...form, notification_enabled: event.target.checked })} />
+                        <input type="checkbox" checked={form.notification_enabled} onChange={event => setForm({
+                                ...form,
+                                notification_enabled: event.target.checked
+                            })} />
                         신규 RP 알림 사용 (푸시 서버 연동 전에는 설정만 저장)
                     </label>
                 </section>
@@ -207,18 +238,33 @@ export default function Settings({ profile, preferences, userId, onSaved, onErro
                         {Object.entries(colorLabels).map(([key, label]) => (
                             <label className="color-field" key={key}>
                                 {label}
-                                <input type="color" value={form[key]} onChange={event => setForm({ ...form, [key]: event.target.value })} />
+
+                                <input
+                                    type="color"
+                                    value={form[key]}
+                                    onChange={event => setForm({
+                                        ...form,
+                                        [key]: event.target.value
+                                    })}
+                                />
+
                                 <span>{form[key]}</span>
                             </label>
                         ))}
                     </div>
 
-                    <button className="secondary" type="button" onClick={() => setForm({ ...form, ...defaultColors })}>
+                    <button className="secondary" type="button" onClick={() => setForm({
+                            ...form,
+                            ...defaultColors
+                        })} >
                         기본 색상으로 초기화
                     </button>
                 </section>
 
-                <button className="primary save-button" disabled={saving || !name.trim()}>
+                <button
+                    className="primary save-button"
+                    disabled={saving || !name.trim()}
+                >
                     {saving ? '저장 중...' : '변경 사항 저장'}
                 </button>
             </form>
