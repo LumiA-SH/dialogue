@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BookOpen, Settings, LogOut, Users, MessageSquare, Shield } from 'lucide-react';
 import { supabase, isConfigured } from '../lib/supabase';
-import { getRows, loginWithCode } from '../lib/api';
+import { getRows, loginWithCode, roomAction } from '../lib/api';
 
 import Avatar from '../components/Avatar';
 import RoomForm from '../components/RoomForm';
@@ -25,12 +25,14 @@ export default function AppRouter() {
     const [session, setSession] = useState(null);
     const [profile, setProfile] = useState(null);
     const [rooms, setRooms] = useState([]);
+    const [invites, setInvites] = useState([]);
     const [characters, setCharacters] = useState([]);
     const [preferences, setPreferences] = useState(null);
 
     const [view, setView] = useState('rooms');
     const [room, setRoom] = useState(null);
     const [roomFormOpen, setRoomFormOpen] = useState(false);
+    const [joiningRoomId, setJoiningRoomId] = useState(null);
 
     const [error, setError] = useState('');
     const [busy, setBusy] = useState(false);
@@ -76,6 +78,7 @@ export default function AppRouter() {
         if (!session) {
             setProfile(null);
             setRooms([]);
+            setInvites([]);
             setCharacters([]);
             setPreferences(null);
             return;
@@ -85,9 +88,10 @@ export default function AppRouter() {
 
         async function loadData() {
             try {
-                const [users, roomRows, characterRows, settingsRows] = await Promise.all([
+                const [users, roomResult, inviteResult, characterRows, settingsRows] = await Promise.all([
                     getRows('user', query => query.eq('user_id', session.user.id)),
-                    getRows('rooms', query => query.order('created_at', { ascending: false })),
+                    roomAction('list', { limit: 100 }),
+                    roomAction('list-invites'),
                     getRows('characters', query => query.eq('user_id', session.user.id).order('created_at', { ascending: false })),
                     getRows('settings', query => query.eq('user_id', session.user.id))
                 ]);
@@ -95,7 +99,8 @@ export default function AppRouter() {
                 if (!active) return;
 
                 setProfile(users[0] || null);
-                setRooms(roomRows);
+                setRooms(roomResult.rooms || []);
+                setInvites(inviteResult.invites || []);
                 setCharacters(characterRows);
                 setPreferences(settingsRows[0] || null);
                 setError('');
@@ -144,9 +149,33 @@ export default function AppRouter() {
         setError('');
     }
 
-    function selectRoom(selectedRoom) {
-        setRoom(selectedRoom);
-        setView('rooms');
+    async function selectRoom(selectedRoom) {
+        if (joiningRoomId) return;
+
+        if (!selectedRoom.is_member && !selectedRoom.is_public) {
+            setError('비공개방은 받은 초대를 수락한 뒤 입장할 수 있습니다.');
+            return;
+        }
+
+        setJoiningRoomId(selectedRoom.room_id);
+        setError('');
+
+        try {
+            if (!selectedRoom.is_member) {
+                await roomAction('join', { room_id: selectedRoom.room_id });
+                setRooms(previous => previous.map(item => item.room_id === selectedRoom.room_id
+                    ? { ...item, is_member: true, is_invited: false }
+                    : item
+                ));
+            }
+
+            setRoom({ ...selectedRoom, is_member: true });
+            setView('rooms');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setJoiningRoomId(null);
+        }
     }
 
     function closeRoom() {
@@ -156,7 +185,7 @@ export default function AppRouter() {
 
     async function handleRoomSaved(savedRoom) {
         if (savedRoom && room?.room_id === savedRoom.room_id) {
-            setRoom(savedRoom);
+            setRoom(previous => ({ ...previous, ...savedRoom }));
         }
 
         reload();
@@ -183,9 +212,7 @@ export default function AppRouter() {
 
     const isAdmin = profile?.role === 1;
 
-    if (loading) {
-        return <div className="center-screen">연결 확인 중...</div>;
-    }
+    if (loading) return <div className="center-screen">연결 확인 중...</div>;
 
     if (!isConfigured) {
         return (
@@ -197,9 +224,7 @@ export default function AppRouter() {
         );
     }
 
-    if (!session) {
-        return <Login onLogin={login} error={error} busy={busy} />;
-    }
+    if (!session) return <Login onLogin={login} error={error} busy={busy} />;
 
     return (
         <div className="app" style={theme}>
@@ -248,7 +273,15 @@ export default function AppRouter() {
                     )}
 
                     {view === 'rooms' && !room && (
-                        <Rooms rooms={rooms} isAdmin={isAdmin} onSelect={selectRoom} onReload={reload} />
+                        <Rooms
+                            rooms={rooms}
+                            invites={invites}
+                            isAdmin={isAdmin}
+                            joiningRoomId={joiningRoomId}
+                            onSelect={selectRoom}
+                            onReload={reload}
+                            onError={setError}
+                        />
                     )}
 
                     {view === 'rooms' && room && (
@@ -277,9 +310,7 @@ export default function AppRouter() {
                         />
                     )}
 
-                    {view === 'admin' && isAdmin && (
-                        <Admin onError={setError} />
-                    )}
+                    {view === 'admin' && isAdmin && <Admin onError={setError} />}
                 </main>
             </div>
 

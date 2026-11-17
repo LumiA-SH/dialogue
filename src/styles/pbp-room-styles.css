@@ -1,0 +1,104 @@
+/* ========================================
+   RP ROOM DISCOVERY / INVITATION
+======================================== */
+
+.room-card-container {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.room-card-container > .room-card {
+    flex: 1;
+    width: 100%;
+}
+
+.room-invite-button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.room-status {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.room-invite-list,
+.room-invite-candidates {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.room-invite-candidates {
+    max-height: 310px;
+    margin-top: 20px;
+    overflow-y: auto;
+}
+
+.room-invite-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border, #b9cbe5);
+    border-radius: 9px;
+}
+
+.room-invite-item > div:first-child,
+.room-invite-item > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.room-invite-item .muted {
+    margin-top: 6px;
+}
+
+.room-invite-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+    .room-invite-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .room-invite-actions {
+        width: 100%;
+    }
+}
+
+.room-search {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.room-search label {
+    flex-shrink: 0;
+    font-weight: 600;
+}
+
+.room-search input {
+    flex: 1;
+    min-width: 0;
+    padding: 11px 13px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+}
+
+.room-form input[type='checkbox'] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    flex-shrink: 0;
+}

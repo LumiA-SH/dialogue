@@ -1,6 +1,18 @@
-import React, { useState } from 'react';
-import { Shield, Plus, Copy, RefreshCw, Trash2 } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Shield, Plus, Copy, RefreshCw, Trash2, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { adminAuthAction } from '../lib/api';
+
+function formatDate(value) {
+    if (!value) return '-';
+
+    return new Date(value).toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
 
 export default function Admin({ onError }) {
     const [userName, setUserName] = useState('');
@@ -8,12 +20,35 @@ export default function Admin({ onError }) {
     const [issued, setIssued] = useState(null);
     const [busy, setBusy] = useState(false);
 
+    const [tokens, setTokens] = useState([]);
+    const [tokenLoading, setTokenLoading] = useState(true);
+    const [revealed, setRevealed] = useState(null);
+    const [revealBusy, setRevealBusy] = useState(null);
+
+    const loadTokens = useCallback(async () => {
+        setTokenLoading(true);
+
+        try {
+            const result = await adminAuthAction('list-active-codes');
+            setTokens(Array.isArray(result.tokens) ? result.tokens : []);
+        } catch (err) {
+            onError(err.message);
+        } finally {
+            setTokenLoading(false);
+        }
+    }, [onError]);
+
+    useEffect(() => {
+        loadTokens();
+    }, [loadTokens]);
+
     async function createUser(event) {
         event.preventDefault();
         if (!userName.trim() || busy) return;
 
         setBusy(true);
         setIssued(null);
+        setRevealed(null);
 
         try {
             const result = await adminAuthAction('create-user', {
@@ -23,6 +58,7 @@ export default function Admin({ onError }) {
             setIssued(result);
             setTargetUserId(result.user_id);
             setUserName('');
+            await loadTokens();
         } catch (err) {
             onError(err.message);
         } finally {
@@ -40,6 +76,7 @@ export default function Admin({ onError }) {
 
         setBusy(true);
         setIssued(null);
+        setRevealed(null);
 
         try {
             const result = await adminAuthAction('rotate-code', {
@@ -47,6 +84,7 @@ export default function Admin({ onError }) {
             });
 
             setIssued(result);
+            await loadTokens();
         } catch (err) {
             onError(err.message);
         } finally {
@@ -70,6 +108,8 @@ export default function Admin({ onError }) {
             });
 
             setIssued(null);
+            setRevealed(null);
+            await loadTokens();
             window.alert('접속 코드가 폐기되었습니다.');
         } catch (err) {
             onError(err.message);
@@ -78,14 +118,47 @@ export default function Admin({ onError }) {
         }
     }
 
-    async function copyCode() {
-        if (!issued?.code) return;
+    async function copyCode(code) {
+        if (!code) return;
 
         try {
-            await navigator.clipboard.writeText(issued.code);
+            await navigator.clipboard.writeText(code);
             window.alert('접속 코드를 복사했습니다.');
         } catch (err) {
             onError('접속 코드 복사에 실패했습니다.');
+        }
+    }
+
+    async function toggleReveal(token) {
+        if (revealed?.token_id === token.token_id) {
+            setRevealed(null);
+            return;
+        }
+
+        if (revealBusy) return;
+
+        setRevealed(null);
+        setRevealBusy(token.token_id);
+
+        try {
+            const result = await adminAuthAction('reveal-code', {
+                token_id: token.token_id
+            });
+
+            setRevealed({
+                token_id: token.token_id,
+                code: result.code
+            });
+        } catch (err) {
+            onError(err.message);
+        } finally {
+            setRevealBusy(null);
+        }
+    }
+
+    function handleTokenToggle(event) {
+        if (!event.currentTarget.open) {
+            setRevealed(null);
         }
     }
 
@@ -131,7 +204,7 @@ export default function Admin({ onError }) {
             {issued?.code && (
                 <section className="panel">
                     <h2>발급된 접속 코드</h2>
-                    <p className="notice">접속 코드는 지금만 확인할 수 있습니다. 안전하게 보관해 주세요.</p>
+                    <p className="notice">새로 발급한 접속 코드입니다. 이후에도 아래 발급 토큰 목록에서 확인할 수 있습니다.</p>
 
                     <div className="form-body">
                         <label htmlFor="issued-user-id">사용자 ID</label>
@@ -140,12 +213,94 @@ export default function Admin({ onError }) {
                         <label htmlFor="issued-code">접속 코드</label>
                         <input id="issued-code" value={issued.code} readOnly />
 
-                        <button className="primary" type="button" onClick={copyCode}>
+                        <button className="primary" type="button" onClick={() => copyCode(issued.code)}>
                             <Copy size={17} /> 코드 복사
                         </button>
                     </div>
                 </section>
             )}
+
+            <details className="panel admin-token-details" onToggle={handleTokenToggle}>
+                <summary className="admin-token-summary">
+                    <div className="admin-token-summary-text">
+                        <strong>발급 토큰</strong>
+                        <span>{tokenLoading ? '조회 중...' : `현재 활성 토큰 ${tokens.length}개`}</span>
+                    </div>
+
+                    <ChevronDown className="admin-token-chevron" size={20} />
+                </summary>
+
+                <div className="admin-token-content">
+                    <div className="admin-token-toolbar">
+                        <p>현재 사용 가능한 접속 토큰만 표시됩니다.</p>
+
+                        <button className="secondary" type="button" onClick={loadTokens} disabled={tokenLoading}>
+                            <RefreshCw size={15} /> 새로고침
+                        </button>
+                    </div>
+
+                    {tokenLoading && (
+                        <p className="admin-token-empty">활성 토큰을 조회하고 있습니다.</p>
+                    )}
+
+                    {!tokenLoading && tokens.length === 0 && (
+                        <p className="admin-token-empty">현재 활성화된 토큰이 없습니다.</p>
+                    )}
+
+                    {!tokenLoading && tokens.length > 0 && (
+                        <div className="admin-token-list">
+                            {tokens.map(token => (
+                                <div className="admin-token-item" key={token.token_id}>
+                                    <div className="admin-token-item-header">
+                                        <div className="admin-token-user">
+                                            <strong>{token.user_name}</strong>
+                                            <span className="admin-token-status">활성</span>
+                                        </div>
+
+                                        <div className="admin-token-actions">
+                                            <button className="secondary" type="button" onClick={() => setTargetUserId(token.user_id)}>
+                                                관리 대상 선택
+                                            </button>
+
+                                            {token.recoverable && (
+                                                <button className="secondary" type="button" onClick={() => toggleReveal(token)} disabled={Boolean(revealBusy)}>
+                                                    {revealed?.token_id === token.token_id ? (
+                                                        <><EyeOff size={15} /> 숨기기</>
+                                                    ) : (
+                                                        <><Eye size={15} /> {revealBusy === token.token_id ? '확인 중...' : '토큰 보기'}</>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="admin-token-meta">
+                                        <span>사용자 ID: {token.user_id}</span>
+                                        <span>발급일: {formatDate(token.created_at)}</span>
+                                        <span>만료일: {token.expires_at ? formatDate(token.expires_at) : '없음'}</span>
+                                    </div>
+
+                                    {!token.recoverable && (
+                                        <p className="admin-token-unavailable">
+                                            기존 발급 토큰은 원문을 복구할 수 없습니다. 원문 확인이 필요하면 재발급해 주세요.
+                                        </p>
+                                    )}
+
+                                    {revealed?.token_id === token.token_id && (
+                                        <div className="admin-token-value">
+                                            <input type="text" value={revealed.code} aria-label={`${token.user_name}의 접속 토큰`} readOnly />
+
+                                            <button className="primary" type="button" onClick={() => copyCode(revealed.code)}>
+                                                <Copy size={15} /> 복사
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </details>
         </>
     );
 }

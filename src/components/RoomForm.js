@@ -10,6 +10,7 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 export default function RoomForm({ room = null, onClose, onSaved }) {
     const [roomName, setRoomName] = useState(room?.room_name || '');
     const [roomImg, setRoomImg] = useState(room?.room_img || '');
+    const [isPublic, setIsPublic] = useState(room?.is_public !== false);
     const [imageFile, setImageFile] = useState(null);
     const [preview, setPreview] = useState(room?.room_img || '');
     const [saving, setSaving] = useState(false);
@@ -25,13 +26,11 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
 
         const objectUrl = URL.createObjectURL(imageFile);
         setPreview(objectUrl);
-
         return () => URL.revokeObjectURL(objectUrl);
     }, [imageFile, roomImg]);
 
     function handleImageChange(event) {
         const file = event.target.files?.[0];
-
         if (!file) return;
 
         if (!ALLOWED_TYPES.includes(file.type)) {
@@ -65,13 +64,10 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
         }[file.type];
 
         const filePath = `rooms/${crypto.randomUUID()}.${extension}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from(BUCKET)
-            .upload(filePath, file, {
-                contentType: file.type,
-                upsert: false
-            });
+        const { error: uploadError } = await supabase.storage.from(BUCKET).upload(filePath, file, {
+            contentType: file.type,
+            upsert: false
+        });
 
         if (uploadError) throw uploadError;
 
@@ -81,7 +77,6 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
 
     async function handleSubmit(event) {
         event.preventDefault();
-
         const name = roomName.trim();
 
         if (!name) {
@@ -91,7 +86,6 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
 
         setSaving(true);
         setError('');
-
         let uploadedPath = null;
 
         try {
@@ -106,16 +100,14 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
             const result = await adminRoomAction(isEdit ? 'update' : 'create', {
                 ...(isEdit ? { room_id: room.room_id } : {}),
                 room_name: name,
-                room_img: imageUrl || null
+                room_img: imageUrl || null,
+                is_public: isPublic
             });
 
             if (onSaved) await onSaved(result.room);
             onClose();
         } catch (err) {
-            if (uploadedPath) {
-                await supabase.storage.from(BUCKET).remove([uploadedPath]);
-            }
-
+            if (uploadedPath) await supabase.storage.from(BUCKET).remove([uploadedPath]);
             setError(err.message || '방 저장에 실패했습니다.');
         } finally {
             setSaving(false);
@@ -137,6 +129,12 @@ export default function RoomForm({ room = null, onClose, onSaved }) {
                         <button type="button" onClick={handleImageRemove} disabled={saving}>이미지 제거</button>
                     </div>
                 )}
+
+                <label className="checkbox-label" htmlFor="room-public">
+                    <input id="room-public" type="checkbox" checked={isPublic} onChange={event => setIsPublic(event.target.checked)} disabled={saving} />
+                    공개방 (다른 사용자가 검색하고 즉시 참여할 수 있음)
+                </label>
+                {!isPublic && <p className="muted">비공개방은 초대받은 사용자만 참여할 수 있습니다.</p>}
 
                 {error && <p className="form-error" role="alert">{error}</p>}
 
