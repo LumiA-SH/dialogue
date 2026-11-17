@@ -199,7 +199,7 @@ export default function Admin({ onError }) {
                         <RefreshCw size={17} /> 접속 코드 재발급
                     </button>
 
-                    <button className="danger" type="button" onClick={revokeCode} disabled={busy || !targetUserId.trim()}>
+                    <button className="danger-outline" type="button" onClick={revokeCode} disabled={busy || !targetUserId.trim()}>
                         <Trash2 size={17} /> 접속 코드 폐기
                     </button>
                 </div>
