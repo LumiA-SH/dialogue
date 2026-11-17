@@ -1,11 +1,328 @@
-.pbp-admin-user-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
+
+/* ========================================
+   ADMIN USERS - MAIN PANEL
+======================================== */
+
+.pbp-admin-users {
+    min-width: 0;
 }
 
-.pbp-admin-user-actions button {
-    min-height: 44px;
+.pbp-admin-users-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.pbp-admin-users-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pbp-admin-users .pbp-admin-users-heading h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 750;
+}
+
+.pbp-admin-users-heading > span {
+    color: #7184a0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.pbp-admin-users .pbp-admin-users-refresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 7px 12px;
+    font-size: 12px;
+}
+
+.pbp-admin-users-refresh .is-loading {
+    animation: pbp-admin-spin 1s linear infinite;
+}
+
+@keyframes pbp-admin-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   USER LIST
+======================================== */
+
+.pbp-admin-user-list {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--sub);
+}
+
+.pbp-admin-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    min-width: 0;
+    padding: 15px 17px;
+    border-bottom: 1px solid var(--border);
+}
+
+.pbp-admin-user-row:last-child {
+    border-bottom: 0;
+}
+
+.pbp-admin-user-row:hover {
+    background: var(--main);
+}
+
+.pbp-admin-user-info {
+    display: flex;
+    flex: 1 1 180px;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.pbp-admin-user-info > :first-child {
+    flex-shrink: 0;
+}
+
+.pbp-admin-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
+
+.pbp-admin-user-name {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+}
+
+.pbp-admin-user-name strong {
+    overflow-wrap: anywhere;
+    color: var(--system-text);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.pbp-admin-user-self {
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: #7184a0;
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+.pbp-admin-user-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: #7184a0;
+    font-size: 11px;
+}
+
+.pbp-admin-user-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 650;
+}
+
+.pbp-admin-user-status::before {
+    content: "";
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.pbp-admin-user-status.is-active {
+    color: #38876c;
+}
+
+.pbp-admin-user-status.is-inactive {
+    color: #9a773b;
+}
+
+.pbp-admin-user-status.is-expired {
+    color: #b54141;
+}
+
+.pbp-admin-user-role::before {
+    content: "·";
+    margin-right: 7px;
+    color: #a4b0c0;
+}
+
+/* ========================================
+   USER ACTION BUTTONS
+======================================== */
+
+.pbp-admin-users .pbp-admin-user-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-width: 0;
+    margin: 0;
+}
+
+.pbp-admin-users .pbp-admin-user-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-height: 36px;
+    margin: 0;
+    padding: 7px 11px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.pbp-admin-user-actions button svg {
+    flex-shrink: 0;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-code {
+    border-color: var(--border);
+    background: var(--sub);
+    color: var(--system-text);
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-activate {
+    border-color: #a5cdbf;
+    background: #eff8f4;
+    color: #27765b;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-activate:hover:not(:disabled) {
+    background: #e0f1e9;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-expire {
+    border: 1px solid #e8baba;
+    background: #fff4f4;
+    color: #b54141;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-expire:hover:not(:disabled) {
+    background: #ffe8e8;
+}
+
+.pbp-admin-users button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.pbp-admin-users-empty {
+    padding: 38px 20px;
+    color: #7184a0;
+    font-size: 12px;
+    text-align: center;
+}
+
+/* ========================================
+   PAGINATION
+======================================== */
+
+.pbp-admin-users-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.pbp-admin-users .pbp-admin-users-pagination button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 36px;
+    padding: 7px 11px;
+    font-size: 11px;
+}
+
+.pbp-admin-users-page {
+    min-width: 76px;
+    color: #7184a0;
+    font-size: 12px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.pbp-admin-users-page strong {
+    color: var(--system-text);
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
+
+@media (max-width: 900px) {
+    .pbp-admin-user-row {
+        align-items: flex-start;
+    }
+
+    .pbp-admin-users .pbp-admin-user-actions {
+        justify-content: flex-start;
+        width: 100%;
+        padding-left: 52px;
+    }
+}
+
+@media (max-width: 560px) {
+    .pbp-admin-users-header {
+        margin-bottom: 15px;
+    }
+
+    .pbp-admin-user-row {
+        gap: 11px;
+        padding: 13px;
+    }
+
+    .pbp-admin-user-info {
+        flex-basis: 100%;
+    }
+
+    .pbp-admin-users .pbp-admin-user-actions {
+        padding-left: 0;
+    }
+
+    .pbp-admin-users .pbp-admin-user-actions button {
+        min-height: 36px;
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    .pbp-admin-users-pagination {
+        gap: 10px;
+    }
+
+    .pbp-admin-users .pbp-admin-users-pagination button {
+        padding: 7px 9px;
+    }
 }
