@@ -306,7 +306,7 @@ export default function AppRouter() {
                 <header className="topbar pbp-global-header">
                     <button className="brand pbp-brand" onClick={() => navigate('rooms')}>
                         <BookOpen size={23} />
-                        <span>다이얼로그</span>
+                        <span>DIALOGUE</span>
                     </button>
 
                     <div className="pbp-desktop-account">

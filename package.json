@@ -2,7 +2,7 @@
   "name": "pbp-rp-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lumia-sh.github.io/pbp_1.0/",
+  "homepage": "https://lumia-sh.github.io/dialogue/",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
     "react": "^18.3.1",
