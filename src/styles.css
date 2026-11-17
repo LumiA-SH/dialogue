@@ -1478,3 +1478,111 @@ textarea:focus {
     padding: 0 10px;
   }
 }
+
+
+/* ========================================
+   RP ROOM SETTINGS
+======================================== */
+
+.room-form-created {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.room-form-created span {
+  color: #7184a0;
+}
+
+.room-form-image-field {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.room-form-image-field .room-form-preview {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 180px;
+  border-radius: 9px;
+  object-fit: contain;
+}
+
+.room-form-image-field small {
+  font-size: 11px;
+  color: #7184a0;
+}
+
+.room-form-image-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-form-image-actions .secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  width: auto;
+  min-height: 38px;
+  margin: 0;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.room-form input[type="file"][hidden] {
+  display: none;
+}
+
+.room-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.room-form-management,
+.room-form-submit {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.room-form-footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.room-form-footer button.danger {
+  border: 1px solid #e8baba;
+  background: #fff4f4;
+  color: #b54141;
+}
+
+@media (max-width: 560px) {
+  .room-form-footer,
+  .room-form-management,
+  .room-form-submit {
+    width: 100%;
+  }
+
+  .room-form-submit {
+    justify-content: flex-end;
+  }
+}

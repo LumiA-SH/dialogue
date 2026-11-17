@@ -207,13 +207,13 @@ export default function Rooms({ rooms, invites = [], isAdmin, onSelect, onReload
         room.room_name.toLocaleLowerCase('ko-KR').includes(keyword)
     );
 
-    const unreadRooms = filteredRooms.filter(room =>
-        room.is_member && getUnreadCount(room) > 0
-    );
+    const unreadRooms = filteredRooms
+        .filter(room => room.is_member && getUnreadCount(room) > 0)
+        .sort((a, b) => new Date(a.last_message_at || 0) - new Date(b.last_message_at || 0));
 
-    const joinedRooms = filteredRooms.filter(room =>
-        room.is_member && getUnreadCount(room) === 0
-    );
+    const joinedRooms = filteredRooms
+        .filter(room => room.is_member && getUnreadCount(room) === 0)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
     const discoverRooms = filteredRooms.filter(room => !room.is_member);
 

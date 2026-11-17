@@ -385,10 +385,12 @@ export default function AppRouter() {
             </div>
 
             {roomFormOpen && room && (
-                <RoomForm
-                    room={room}
-                    onClose={() => setRoomFormOpen(false)}
-                    onSaved={handleRoomSaved}
+                <RoomForm room={room} canManage={isAdmin} onClose={() => setRoomFormOpen(false)} onSaved={handleRoomSaved}
+                          onDeleted={() => {
+                              setRoom(null);
+                              setRoomFormOpen(false);
+                              reload();
+                          }}
                 />
             )}
         </div>

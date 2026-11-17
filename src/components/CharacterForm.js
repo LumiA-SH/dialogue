@@ -53,7 +53,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
             return;
         }
 
-        if (file.size > MAX_FILE_SIZE) {
+        if (file.size > MAX_IMAGE_SIZE) {
             onError('이미지는 최대 5MB까지 등록할 수 있습니다.');
             event.target.value = '';
             return;
