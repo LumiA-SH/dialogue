@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Shield, Plus, Copy, RefreshCw, Trash2, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { adminAuthAction } from '../lib/api';
+import AdminUsers from '../components/AdminUsers';
+import '../styles/pbp-admin-users.css';
 
 function formatDate(value) {
     if (!value) return '-';
@@ -170,6 +172,8 @@ export default function Admin({ onError }) {
                     <p>사용자 계정 및 접속 코드 관리</p>
                 </div>
             </div>
+
+            <AdminUsers refreshKey={issued?.code} onError={onError} onSelectCode={id => { setTargetUserId(id); document.getElementById('admin-target-id')?.focus(); }} />
 
             <section className="panel">
                 <h2>사용자 생성</h2>

@@ -7,6 +7,10 @@ import Avatar from '../components/Avatar';
 import RoomForm from '../components/RoomForm';
 
 import Login from '../pages/Login';
+import ProfileSetup from '../pages/ProfileSetup';
+import RpNotifications from '../components/RpNotifications';
+import { removeDevicePush } from '../lib/pwa';
+import { readRoomLink, writeRoomLink } from '../lib/roomLinks';
 import Rooms from '../pages/Rooms';
 import RoomView from '../pages/RoomView';
 import Characters from '../pages/Characters';
@@ -28,9 +32,11 @@ export default function AppRouter() {
     const [invites, setInvites] = useState([]);
     const [characters, setCharacters] = useState([]);
     const [preferences, setPreferences] = useState(null);
+    const [notificationOverride, setNotificationOverride] = useState(null);
 
     const [view, setView] = useState('rooms');
     const [room, setRoom] = useState(null);
+    const [deepLinkId, setDeepLinkId] = useState(() => readRoomLink());
     const [roomFormOpen, setRoomFormOpen] = useState(false);
     const [joiningRoomId, setJoiningRoomId] = useState(null);
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -82,6 +88,7 @@ export default function AppRouter() {
             setInvites([]);
             setCharacters([]);
             setPreferences(null);
+            setNotificationOverride(null);
             return;
         }
 
@@ -117,6 +124,43 @@ export default function AppRouter() {
         };
     }, [session, refresh]);
 
+    useEffect(() => {
+        const changed = () => setDeepLinkId(readRoomLink());
+        window.addEventListener('hashchange', changed);
+        return () => window.removeEventListener('hashchange', changed);
+    }, []);
+
+    useEffect(() => {
+        if (!session?.user.id || !profile || profile.profile_completed === false || !deepLinkId) return;
+        let active = true;
+        async function openLink() {
+            try {
+                const [found, members] = await Promise.all([
+                    getRows('rooms', query => query.eq('room_id', deepLinkId).limit(1)),
+                    getRows('room_user', query => query.eq('room_id', deepLinkId).eq('user_id', session.user.id))
+                ]);
+                const target = found[0];
+                if (!target || (!members.length && !target.is_public)) throw new Error('이 방에 접근할 권한이 없거나 방이 삭제되었습니다.');
+                if (!members.length) await roomAction('join', { room_id: deepLinkId });
+                if (!active) return;
+                setRoom({ ...target, is_member: true });
+                setView('rooms');
+                setAccountMenuOpen(false);
+                setError('');
+                setDeepLinkId(null);
+            } catch (err) {
+                if (active) { setError(err.message); setDeepLinkId(null); writeRoomLink(null); }
+            }
+        }
+        openLink();
+        return () => { active = false; };
+    }, [session, profile, deepLinkId]);
+
+    function openNotification(id) {
+        writeRoomLink(id);
+        setDeepLinkId(id);
+    }
+
     async function login(code) {
         setBusy(true);
         setError('');
@@ -132,6 +176,7 @@ export default function AppRouter() {
 
     async function logout() {
         try {
+            await removeDevicePush();
             const { error: logoutError } = await supabase.auth.signOut();
             if (logoutError) throw logoutError;
 
@@ -146,6 +191,8 @@ export default function AppRouter() {
     }
 
     function navigate(nextView) {
+        writeRoomLink(null);
+        setDeepLinkId(null);
         setView(nextView);
         setRoom(null);
         setError('');
@@ -174,6 +221,8 @@ export default function AppRouter() {
                 ));
             }
 
+            writeRoomLink(selectedRoom.room_id);
+            setDeepLinkId(null);
             setRoom({ ...selectedRoom, is_member: true });
             setView('rooms');
             setAccountMenuOpen(false);
@@ -185,6 +234,8 @@ export default function AppRouter() {
     }
 
     function closeRoom() {
+        writeRoomLink(null);
+        setDeepLinkId(null);
         setRoom(null);
         reload();
     }
@@ -238,8 +289,17 @@ export default function AppRouter() {
         return <Login onLogin={login} error={error} busy={busy} />;
     }
 
+    if (!profile) {
+        return <div className="center-screen"><p>{error || '프로필 확인 중...'}</p><button className="secondary" onClick={reload}>다시 시도</button><button className="secondary" onClick={logout}>로그아웃</button></div>;
+    }
+
+    if (profile.profile_completed === false) {
+        return <ProfileSetup userId={session.user.id} onLogout={logout} onSaved={saved => { setProfile(saved); setView('rooms'); reload(); }} />;
+    }
+
     return (
         <div className={`app pbp-app${isRoomOpen ? ' pbp-app-room' : ''}`} style={theme}>
+            <RpNotifications userId={session.user.id} enabled={notificationOverride ?? preferences?.notification_enabled} roomId={room?.room_id} onOpen={openNotification} onRefresh={reload} />
             {!isRoomOpen && (
                 <header className="topbar pbp-global-header">
                     <button className="brand pbp-brand" onClick={() => navigate('rooms')}>
@@ -249,7 +309,7 @@ export default function AppRouter() {
 
                     <div className="pbp-desktop-account">
                         <Avatar src={profile?.user_portrait} name={userName} size={35} />
-                        <strong className="pbp-account-name">{userName}</strong>
+                        <button className="secondary pbp-account-name" onClick={() => navigate('settings')} title="프로필 수정">{userName} · 프로필 수정</button>
 
                         <button className="pbp-logout-button" onClick={logout}>
                             <LogOut size={17} />
@@ -269,7 +329,8 @@ export default function AppRouter() {
 
                         {accountMenuOpen && (
                             <div className="pbp-account-popup">
-                                <div className="pbp-account-popup-name">{userName}</div>
+                                <div className="pbp-account-popup-name"><Avatar src={profile?.user_portrait} name={userName} size={40} />{userName}</div>
+                                <button onClick={() => navigate('settings')}>프로필 수정</button>
                                 <button onClick={logout}>
                                     <LogOut size={16} />
                                     로그아웃
@@ -348,9 +409,11 @@ export default function AppRouter() {
 
                         {view === 'rooms' && room && (
                             <RoomView
+                                key={room.room_id}
                                 room={room}
                                 userId={session.user.id}
                                 characters={characters}
+                                onCharacterSaved={saved => setCharacters(previous => [saved, ...previous.filter(item => item.character_id !== saved.character_id)])}
                                 preferences={preferences}
                                 onBack={closeRoom}
                                 onEdit={() => setRoomFormOpen(true)}
@@ -373,6 +436,7 @@ export default function AppRouter() {
                                 preferences={preferences}
                                 userId={session.user.id}
                                 onSaved={reload}
+                                onNotificationChange={setNotificationOverride}
                                 onError={setError}
                             />
                         )}

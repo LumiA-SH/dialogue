@@ -1,0 +1,11 @@
+.pbp-admin-user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.pbp-admin-user-actions button {
+    min-height: 44px;
+}

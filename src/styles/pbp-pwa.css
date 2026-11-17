@@ -1,0 +1,38 @@
+.pbp-rp-notification {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top));
+    right: calc(12px + env(safe-area-inset-right));
+    left: 12px;
+    z-index: 1100;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 12px;
+    background: var(--sub);
+    color: var(--system-text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+@media (max-width: 1024px), (pointer: coarse) {
+    .app.pbp-app {
+        height: var(--pbp-viewport-height, 100dvh);
+        padding-top: env(safe-area-inset-top);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+        box-sizing: border-box;
+    }
+
+    .pbp-composer-wrap {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .modal {
+        max-height: calc(var(--pbp-viewport-height, 100dvh) - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        overflow-y: auto;
+    }
+
+    input, textarea, select {
+        font-size: 16px;
+    }
+}

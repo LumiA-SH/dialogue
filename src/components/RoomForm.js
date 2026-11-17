@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ImagePlus, Trash2, Download, Save } from 'lucide-react';
+import { ImagePlus, Trash2, Download, Save, Image as ImageIcon } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
@@ -7,6 +7,7 @@ import { adminRoomAction, getRows } from '../lib/api';
 import Modal from './Modal';
 import formatDate from '../utils/formatDate';
 import escapeHtml from '../utils/escapeHtml';
+import '../styles/pbp-room-form.css';
 
 const BUCKET = 'pbp-room-images';
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -141,6 +142,7 @@ export default function RoomForm({ room = null, onClose, onSaved, onDeleted, can
                     // 원래 저장 오류를 우선 표시합니다.
                 }
             }
+
             setError(err.message || '방 저장에 실패했습니다.');
         } finally {
             setSaving(false);
@@ -177,6 +179,7 @@ export default function RoomForm({ room = null, onClose, onSaved, onDeleted, can
                 const name = message.message_type === 'narration' ? '나레이션' : message.character_name_snapshot || '캐릭터';
                 const body = DOMPurify.sanitize(marked.parse(message.text || ''));
                 const image = message.img ? `<p><a href="${escapeHtml(message.img)}">첨부 이미지</a></p>` : '';
+
                 return `<article><h3>${escapeHtml(name)} · ${escapeHtml(formatDate(message.created_at))}</h3><div>${body}</div>${image}</article>`;
             }).join('\n');
 
@@ -210,66 +213,72 @@ ${content}
         }
     }
 
-    return (
-        <Modal title={isEdit ? 'RP방 설정' : '새 RP방 생성'} onClose={onClose}>
-            <form className="room-form" onSubmit={handleSubmit}>
-                <label htmlFor="room-name">방 이름</label>
-                <input id="room-name" type="text" maxLength={60} value={roomName} onChange={event => setRoomName(event.target.value)} placeholder="RP방 이름을 입력해 주세요." disabled={saving || !canManage} required />
+    function renderImageField(id, title, preview, file, setter, removeImage, buttonText) {
+        return (
+            <section className="room-settings-image-card">
+                <h3>{title}</h3>
+                <div className="room-settings-image-preview">
+                    {preview ? <img src={preview} alt={`${title} 미리보기`} /> : (
+                        <div className="room-settings-image-empty">
+                            <ImageIcon size={26} />
+                            <span>등록된 이미지 없음</span>
+                        </div>
+                    )}
+                </div>
 
-                {isEdit && (
-                    <div className="room-form-created">
-                        <strong>생성일</strong>
-                        <span>{formatDate(room.created_at)}</span>
+                {canManage && (
+                    <div className="room-settings-image-actions">
+                        <label className="secondary" htmlFor={id}><ImagePlus size={15} /> {buttonText}</label>
+                        <input id={id} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => selectFile(event, setter)} disabled={saving} hidden />
+                        {preview && (
+                            <button className="secondary" type="button" onClick={removeImage} disabled={saving}>
+                                <Trash2 size={15} /> 제거
+                            </button>
+                        )}
                     </div>
                 )}
 
-                <label>방 대표 이미지</label>
-                <div className="room-form-image-field">
-                    {imagePreview && <img className="room-form-preview" src={imagePreview} alt="방 대표 이미지 미리보기" />}
-                    <div className="room-form-image-actions">
-                        {canManage && (
-                            <>
-                                <label className="secondary" htmlFor="room-image"><ImagePlus size={16} /> 이미지 선택</label>
-                                <input id="room-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => selectFile(event, setImageFile)} disabled={saving} hidden />
-                                {imagePreview && (
-                                    <button className="secondary" type="button" onClick={() => { setImageFile(null); setRoomImg(''); }} disabled={saving}>
-                                        <Trash2 size={15} /> 제거
-                                    </button>
-                                )}
-                            </>
-                        )}
+                {file && <span className="room-settings-file-name">{file.name}</span>}
+            </section>
+        );
+    }
+
+    return (
+        <Modal title={isEdit ? 'RP방 설정' : '새 RP방 생성'} onClose={onClose} wide>
+            <form className="room-form room-settings-form" onSubmit={handleSubmit}>
+                <div className="room-settings-name-field">
+                    <div className="room-settings-field-header">
+                        <label htmlFor="room-name">방 이름</label>
+                        {isEdit && <span>생성일 · {formatDate(room.created_at)}</span>}
                     </div>
+                    <input id="room-name" type="text" maxLength={60} value={roomName} onChange={event => setRoomName(event.target.value)} placeholder="RP방 이름을 입력해 주세요." disabled={saving || !canManage} required />
                 </div>
 
-                <label>RP 장면 배경 이미지</label>
-                <div className="room-form-image-field">
-                    {scenePreview && <img className="room-form-preview" src={scenePreview} alt="장면 배경 이미지 미리보기" />}
-                    <div className="room-form-image-actions">
-                        {canManage && (
-                            <>
-                                <label className="secondary" htmlFor="room-scene-image"><ImagePlus size={16} /> 배경 선택</label>
-                                <input id="room-scene-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={event => selectFile(event, setSceneFile)} disabled={saving} hidden />
-                                {scenePreview && (
-                                    <button className="secondary" type="button" onClick={() => { setSceneFile(null); setSceneImg(''); }} disabled={saving}>
-                                        <Trash2 size={15} /> 제거
-                                    </button>
-                                )}
-                            </>
-                        )}
-                    </div>
-                    {!scenePreview && <small>배경 미등록 시 방 대표 이미지를 대신 표시합니다.</small>}
+                <div className="room-settings-image-grid">
+                    {renderImageField('room-image', '방 대표 이미지', imagePreview, imageFile, setImageFile, () => {
+                        setImageFile(null);
+                        setRoomImg('');
+                    }, '이미지 선택')}
+
+                    {renderImageField('room-scene-image', 'RP 장면 배경 이미지', scenePreview, sceneFile, setSceneFile, () => {
+                        setSceneFile(null);
+                        setSceneImg('');
+                    }, '배경 선택')}
                 </div>
 
-                <label className="checkbox-label" htmlFor="room-public">
+                <label className="room-settings-public" htmlFor="room-public">
                     <input id="room-public" type="checkbox" checked={isPublic} onChange={event => setIsPublic(event.target.checked)} disabled={saving || !canManage} />
-                    공개방 (다른 사용자가 검색하고 즉시 참여할 수 있음)
+                    <span>
+                        <strong>공개방</strong>
+                        <small>다른 사용자가 방을 검색하고 즉시 참여할 수 있습니다.</small>
+                    </span>
                 </label>
 
-                {!isPublic && <p className="muted">비공개방은 초대받은 사용자만 참여할 수 있습니다.</p>}
+                {!isPublic && <p className="room-settings-private-notice">비공개방은 초대받은 사용자만 참여할 수 있습니다.</p>}
                 {error && <p className="form-error" role="alert">{error}</p>}
 
-                <div className="room-form-footer">
-                    <div className="room-form-management">
+                <div className="room-settings-footer">
+                    <div className="room-settings-management">
                         {isEdit && (
                             <button className="secondary" type="button" onClick={exportHtml} disabled={saving}>
                                 <Download size={16} /> 로그 백업
@@ -282,7 +291,7 @@ ${content}
                         )}
                     </div>
 
-                    <div className="room-form-submit">
+                    <div className="room-settings-submit">
                         <button className="secondary" type="button" onClick={onClose} disabled={saving}>취소</button>
                         {canManage && (
                             <button className="primary" type="submit" disabled={saving || !roomName.trim()}>

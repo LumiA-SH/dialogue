@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { saveRow } from '../lib/api';
 import Avatar from '../components/Avatar';
+import PushSettings from '../components/PushSettings';
+import ThemePreview from '../components/ThemePreview';
 
 const PROFILE_BUCKET = 'pbp-profile-images';
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -23,7 +24,7 @@ const colorLabels = {
     ui_body_text_color: '본문 텍스트'
 };
 
-export default function Settings({ profile, preferences, userId, onSaved, onError }) {
+export default function Settings({ profile, preferences, userId, onSaved, onNotificationChange, onError }) {
     const [name, setName] = useState(profile?.user_name || 'User');
     const [portrait, setPortrait] = useState(profile?.user_portrait || '');
     const [imageFile, setImageFile] = useState(null);
@@ -129,10 +130,8 @@ export default function Settings({ profile, preferences, userId, onSaved, onErro
 
             if (error) throw error;
 
-            await saveRow('settings', {
-                ...form,
-                user_id: userId
-            }, 'user_id', preferences?.user_id);
+            const { error: settingsError } = await supabase.from('settings').upsert({ ...form, user_id: userId }, { onConflict: 'user_id' });
+            if (settingsError) throw settingsError;
 
             setPortrait(portraitUrl);
             setImageFile(null);
@@ -221,19 +220,14 @@ export default function Settings({ profile, preferences, userId, onSaved, onErro
                         Enter는 줄바꿈이며, 선택한 단축키를 누르면 RP가 전송됩니다.
                     </p>
 
-                    <label className="checkbox-label">
-                        <input type="checkbox" checked={form.notification_enabled} onChange={event => setForm({
-                                ...form,
-                                notification_enabled: event.target.checked
-                            })} />
-                        신규 RP 알림 사용 (푸시 서버 연동 전에는 설정만 저장)
-                    </label>
+                    <PushSettings userId={userId} enabled={form.notification_enabled} onChange={enabled => { setForm(previous => ({ ...previous, notification_enabled: enabled })); onNotificationChange?.(enabled); }} />
                 </section>
 
                 <section className="panel">
                     <h2>UI 색상</h2>
                     <p className="muted">변경 내용은 저장 후 화면 전체에 적용됩니다.</p>
 
+                    <ThemePreview colors={form} />
                     <div className="color-grid">
                         {Object.entries(colorLabels).map(([key, label]) => (
                             <label className="color-field" key={key}>

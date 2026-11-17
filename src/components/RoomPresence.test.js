@@ -1,0 +1,30 @@
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import RoomPresence from './RoomPresence';
+import { supabase } from '../lib/supabase';
+jest.mock('../lib/supabase', () => ({ supabase: { channel: jest.fn(), removeChannel: jest.fn() } }));
+
+test('presence is room scoped, ignores other rooms, and cleans up on exit', async () => {
+    global.IS_REACT_ACT_ENVIRONMENT = true;
+    let sync, subscription;
+    const channel = { on: jest.fn((event, filter, cb) => { sync = cb; return channel; }), subscribe: jest.fn(cb => { subscription = cb; return channel; }), track: jest.fn().mockResolvedValue('ok'), untrack: jest.fn(), presenceState: jest.fn() };
+    supabase.channel.mockReturnValue(channel);
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    await act(async () => root.render(<RoomPresence roomId={2} userId="me" />));
+    expect(supabase.channel).toHaveBeenCalledWith('pbp-presence-2', expect.objectContaining({ config: expect.objectContaining({ private: true }) }));
+    await act(async () => subscription('SUBSCRIBED'));
+    expect(channel.track).toHaveBeenCalledWith({ room_id: 2, user_id: 'me' });
+    channel.presenceState.mockReturnValue({ me: [{ room_id: 2, user_id: 'me' }], other: [{ room_id: 3, user_id: 'other' }] });
+    act(() => sync());
+    expect(container.textContent).toBe('');
+    expect(container.querySelector('[role="status"]').getAttribute('aria-label')).toBe('상대방 미접속');
+    channel.presenceState.mockReturnValue({ other: [{ room_id: 2, user_id: 'other' }, { room_id: 2, user_id: 'other' }] });
+    act(() => sync());
+    expect(container.querySelector('[role="status"]').getAttribute('aria-label')).toBe('상대방 1명 접속 중');
+    act(() => subscription('CHANNEL_ERROR'));
+    expect(container.querySelector('[role="status"]').getAttribute('aria-label')).toBe('접속 상태 연결 중');
+    act(() => root.unmount());
+    expect(channel.untrack).toHaveBeenCalled();
+    expect(supabase.removeChannel).toHaveBeenCalledWith(channel);
+});

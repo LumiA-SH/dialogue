@@ -74,3 +74,7 @@ export function roomAction(action, values = {}) {
 export function adminRoomAction(action, values = {}) {
     return roomAction(action, values);
 }
+
+export function pushAction(action, values = {}) {
+    return authenticatedAction('pbp-push', action, values);
+}

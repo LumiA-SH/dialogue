@@ -1,0 +1,23 @@
+import React, { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import ProfileSetup from './ProfileSetup';
+import { supabase } from '../lib/supabase';
+jest.mock('../lib/supabase', () => ({ supabase: { from: jest.fn() } }));
+test('initial profile defaults to User and completes only after confirmed persistence', async () => {
+    global.IS_REACT_ACT_ENVIRONMENT = true;
+    const container = document.createElement('div');
+    const root = createRoot(container);
+    const onSaved = jest.fn();
+    const query = { update: jest.fn().mockReturnThis(), eq: jest.fn().mockReturnThis(), select: jest.fn().mockReturnThis(), single: jest.fn().mockResolvedValue({ error: { message: 'denied' } }) };
+    supabase.from.mockReturnValue(query);
+    act(() => root.render(<ProfileSetup userId="me" onSaved={onSaved} onLogout={() => {}} />));
+    expect(container.querySelector('#setup-name').value).toBe('User');
+    await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(container.textContent).toContain('denied');
+    query.single.mockResolvedValue({ data: { user_id: 'me', profile_completed: true } });
+    await act(async () => container.querySelector('form').dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    expect(query.update).toHaveBeenLastCalledWith({ user_name: 'User', user_portrait: null, profile_completed: true });
+    expect(onSaved).toHaveBeenCalledWith({ user_id: 'me', profile_completed: true });
+    act(() => root.unmount());
+});

@@ -1,0 +1,350 @@
+/* ========================================
+   RP ROOM SETTINGS - FORM LAYOUT
+======================================== */
+
+.room-form.room-settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    min-width: 0;
+    padding: 22px 24px 24px;
+}
+
+.room-settings-form * {
+    box-sizing: border-box;
+}
+
+.room-settings-form .room-settings-name-field {
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 22px;
+}
+
+.room-settings-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 9px;
+}
+
+.room-settings-form .room-settings-field-header label {
+    margin: 0;
+    color: var(--system-text, #243b53);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.room-settings-field-header span {
+    color: #7184a0;
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.room-settings-form #room-name {
+    display: block;
+    width: 100%;
+    min-height: 43px;
+    padding: 10px 12px;
+    border: 1px solid var(--border, #b9cbe5);
+    border-radius: 9px;
+    background: var(--sub, #ffffff);
+    color: var(--system-text, #243b53);
+    font-size: 13px;
+}
+
+/* ========================================
+   IMAGE FIELDS
+======================================== */
+
+.room-settings-image-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 22px;
+}
+
+.room-settings-image-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid var(--border, #b9cbe5);
+    border-radius: 12px;
+    background: var(--sub, #ffffff);
+}
+
+.room-settings-image-card h3 {
+    margin: 0;
+    color: var(--system-text, #243b53);
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.room-settings-image-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 160px;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 9px;
+    background: var(--main, #eaf2ff);
+}
+
+.room-settings-image-preview img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.room-settings-image-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    height: 100%;
+    color: #8094ae;
+    font-size: 11px;
+}
+
+.room-settings-image-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    min-height: 36px;
+}
+
+.room-settings-form .room-settings-image-actions .secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: auto;
+    min-height: 35px;
+    margin: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--border, #b9cbe5);
+    border-radius: 8px;
+    background: var(--sub, #ffffff);
+    color: var(--system-text, #243b53);
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.4;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.room-settings-image-actions .secondary:hover {
+    background: var(--main, #eaf2ff);
+}
+
+.room-settings-form .room-settings-image-actions input[type="file"][hidden] {
+    display: none;
+}
+
+.room-settings-file-name {
+    display: block;
+    overflow: hidden;
+    color: #7184a0;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ========================================
+   PUBLIC / PRIVATE
+======================================== */
+
+.room-settings-form .room-settings-public {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    margin: 0;
+    padding: 13px 15px;
+    border: 1px solid var(--border, #b9cbe5);
+    border-radius: 10px;
+    background: var(--main, #eaf2ff);
+    cursor: pointer;
+}
+
+.room-settings-form .room-settings-public input[type="checkbox"] {
+    display: block;
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: #527ec2;
+    cursor: pointer;
+}
+
+.room-settings-public > span {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.room-settings-public strong {
+    color: var(--system-text, #243b53);
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.room-settings-public small {
+    color: #7184a0;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.room-settings-private-notice {
+    margin: 8px 0 0;
+    color: #7184a0;
+    font-size: 11px;
+}
+
+.room-settings-form .form-error {
+    margin: 12px 0 0;
+    color: #b54141;
+    font-size: 12px;
+}
+
+/* ========================================
+   FOOTER ACTIONS
+======================================== */
+
+.room-settings-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border, #b9cbe5);
+}
+
+.room-settings-management,
+.room-settings-submit {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.room-settings-form .room-settings-footer button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: auto;
+    min-height: 38px;
+    margin: 0;
+    padding: 8px 13px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    white-space: nowrap;
+}
+
+.room-settings-footer button svg,
+.room-settings-image-actions svg {
+    flex-shrink: 0;
+}
+
+.room-settings-form .room-settings-footer button.danger {
+    border: 1px solid #e8baba;
+    background: #fff4f4;
+    color: #b54141;
+}
+
+.room-settings-form .room-settings-footer button.danger:hover {
+    background: #ffe8e8;
+}
+
+.room-settings-form .room-settings-footer button.primary {
+    border: 1px solid #527ec2;
+    background: #527ec2;
+    color: #ffffff;
+}
+
+.room-settings-form .room-settings-footer button.primary:hover {
+    background: #406caa;
+}
+
+.room-settings-form .room-settings-footer button.secondary {
+    border: 1px solid var(--border, #b9cbe5);
+    background: var(--sub, #ffffff);
+    color: var(--system-text, #243b53);
+}
+
+/* ========================================
+   RESPONSIVE
+======================================== */
+
+@media (max-width: 560px) {
+    .room-form.room-settings-form {
+        padding: 18px 17px 20px;
+    }
+
+    .room-settings-image-grid {
+        gap: 10px;
+    }
+
+    .room-settings-image-card {
+        padding: 10px;
+    }
+
+    .room-settings-image-card h3 {
+        font-size: 12px;
+    }
+
+    .room-settings-image-preview {
+        height: 135px;
+    }
+
+    .room-settings-form .room-settings-image-actions .secondary {
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+
+    .room-settings-footer {
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    .room-settings-management,
+    .room-settings-submit {
+        width: 100%;
+    }
+
+    .room-settings-submit {
+        justify-content: flex-end;
+    }
+}
+
+@media (max-width: 420px) {
+    .room-settings-image-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .room-settings-image-preview {
+        height: 150px;
+    }
+}

@@ -1,0 +1,29 @@
+.pbp-rp-title h1 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pbp-presence {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.pbp-rp-title-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-presence-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #95a4b5;
+}
+
+.pbp-presence.is-online .pbp-presence-dot {
+    background: #2caa76;
+    box-shadow: 0 0 0 3px #2caa761f;
+}

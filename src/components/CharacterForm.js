@@ -11,7 +11,7 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const DEFAULT_CHARACTER_COLOR = '#527EC2';
 const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-export default function CharacterForm({ character, userId, onClose, onSaved, onError }) {
+export default function CharacterForm({ character, userId, onClose, onSaved, onError, allowDelete = true, inlineError = '' }) {
     const [name, setName] = useState(character?.character_name || '');
     const [portrait, setPortrait] = useState(character?.character_portrait || '');
     const [characterColor, setCharacterColor] = useState(character?.character_color || DEFAULT_CHARACTER_COLOR);
@@ -135,7 +135,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
                 values.user_id = userId;
             }
 
-            await saveRow(
+            const savedCharacter = await saveRow(
                 'characters',
                 values,
                 'character_id',
@@ -143,7 +143,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
             );
 
             saved = true;
-            await onSaved?.();
+            await onSaved?.(savedCharacter);
         } catch (err) {
             if (!saved && uploadedPath) {
                 await supabase.storage.from(IMAGE_BUCKET).remove([uploadedPath]);
@@ -156,7 +156,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
     }
 
     async function handleDelete() {
-        if (!isEdit || saving) return;
+        if (!isEdit || !allowDelete || saving) return;
         if (!window.confirm(`'${character.character_name}' 캐릭터를 삭제할까요?`)) return;
 
         setSaving(true);
@@ -174,6 +174,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
     return (
         <Modal title={isEdit ? '캐릭터 수정' : '캐릭터 추가'} onClose={onClose}>
             <form className="form-body" onSubmit={handleSubmit}>
+                {inlineError && <p className="alert" role="alert">{inlineError}</p>}
                 <label htmlFor="character-name">캐릭터 이름</label>
                 <input
                     id="character-name"
@@ -279,7 +280,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
                 </div>
 
                 <div className="form-actions">
-                    {isEdit && (
+                    {isEdit && allowDelete && (
                         <button
                             className="danger"
                             type="button"

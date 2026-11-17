@@ -1,0 +1,43 @@
+.pbp-image-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px;
+}
+
+.pbp-image-tools button {
+    min-height: 44px;
+}
+
+.pbp-touch-image-viewer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: min(65dvh, 680px);
+    min-height: 160px;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+}
+
+.pbp-touch-image-viewer img {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transform-origin: center;
+    pointer-events: none;
+}
+
+.pbp-composer-draft img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 8px;
+}

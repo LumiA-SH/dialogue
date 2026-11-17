@@ -17,7 +17,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test --watchAll=false",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "test:server": "node scripts/test-account-api.cjs && node scripts/test-push-api.cjs && node scripts/test-service-worker.cjs"
   },
   "devDependencies": {
     "gh-pages": "^6.3.0"

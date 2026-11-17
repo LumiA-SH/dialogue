@@ -1,0 +1,36 @@
+.pbp-room-character-row {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+}
+
+.pbp-room-characters .picker-item {
+    width: 100%;
+    color: var(--system-text);
+    background: var(--sub);
+    border-color: var(--border);
+    min-height: 44px;
+}
+
+.pbp-room-characters .picker-item.active {
+    outline: 2px solid #527ec2;
+}
+
+.pbp-room-characters .picker-item span {
+    flex: 1;
+    overflow-wrap: anywhere;
+}
+
+.pbp-room-characters .picker-item small {
+    flex-shrink: 0;
+}
+
+.pbp-room-character-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pbp-room-character-actions button {
+    min-height: 44px;
+}
