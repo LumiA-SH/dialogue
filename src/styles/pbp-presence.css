@@ -27,3 +27,11 @@
     background: #2caa76;
     box-shadow: 0 0 0 3px #2caa761f;
 }
+
+.pbp-presence-typing {
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 9px;
+    white-space: nowrap;
+}

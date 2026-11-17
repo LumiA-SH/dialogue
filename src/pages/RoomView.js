@@ -35,7 +35,7 @@ function isNearBottom(element) {
     return element.scrollHeight - element.scrollTop - element.clientHeight <= BOTTOM_THRESHOLD;
 }
 
-export default function RoomView({ room, userId, characters, preferences, onCharacterSaved, onBack, onEdit, onError }) {
+export default function RoomView({ room, userId, characters, preferences, onCharacterSaved, onBack, onEdit, onError, presence, onTypingChange }) {
     const [messages, setMessages] = useState([]);
     const [roomCharacters, setRoomCharacters] = useState([]);
     const [membership, setMembership] = useState(null);
@@ -47,6 +47,12 @@ export default function RoomView({ room, userId, characters, preferences, onChar
     const [editing, setEditing] = useState(null);
     const [showCharacters, setShowCharacters] = useState(false);
     const [sending, setSending] = useState(false);
+
+    useEffect(() => {
+        if (!text.trim() || sending) onTypingChange?.(room.room_id, false);
+    }, [text, sending, room.room_id, onTypingChange]);
+
+    useEffect(() => () => onTypingChange?.(room.room_id, false), [room.room_id, onTypingChange]);
 
     const [composerExpanded, setComposerExpanded] = useState(false);
     const [mobileSceneOpen, setMobileSceneOpen] = useState(false);
@@ -652,7 +658,7 @@ ${lines}
                     )}
 
                     <div className="room-title pbp-rp-title">
-                        <h1><span className="pbp-rp-title-text">{room.room_name}</span><RoomPresence roomId={room.room_id} userId={userId} /></h1>
+                        <h1><span className="pbp-rp-title-text">{room.room_name}</span><RoomPresence presence={presence} /></h1>
                     </div>
 
                     <div className="pbp-rp-header-actions">
@@ -740,7 +746,7 @@ ${lines}
                                     </div>
                                 )}
 
-                                <textarea ref={textareaRef} value={text} onChange={event => setText(event.target.value)} onKeyDown={onKeyDown}
+                                <textarea ref={textareaRef} value={text} onChange={event => { setText(event.target.value); onTypingChange?.(room.room_id, Boolean(event.target.value.trim())); }} onKeyDown={onKeyDown}
                                           placeholder={narration ? '나레이션을 입력하세요...' : '글을 입력하세요...'} rows={2} />
 
                                 <div className="pbp-composer-footer">

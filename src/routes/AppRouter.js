@@ -11,6 +11,7 @@ import ProfileSetup from '../pages/ProfileSetup';
 import RpNotifications from '../components/RpNotifications';
 import { removeDevicePush } from '../lib/pwa';
 import { readRoomLink, writeRoomLink } from '../lib/roomLinks';
+import { useSitePresence } from '../lib/sitePresence';
 import Rooms from '../pages/Rooms';
 import RoomView from '../pages/RoomView';
 import Characters from '../pages/Characters';
@@ -45,6 +46,7 @@ export default function AppRouter() {
     const [busy, setBusy] = useState(false);
     const [loading, setLoading] = useState(true);
     const [refresh, setRefresh] = useState(0);
+    const { roomPresence, onTypingChange } = useSitePresence(session?.user.id, room?.room_id, refresh);
 
     const reload = useCallback(() => {
         setRefresh(value => value + 1);
@@ -410,6 +412,8 @@ export default function AppRouter() {
                         {view === 'rooms' && room && (
                             <RoomView
                                 key={room.room_id}
+                                presence={roomPresence}
+                                onTypingChange={onTypingChange}
                                 room={room}
                                 userId={session.user.id}
                                 characters={characters}
