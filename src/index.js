@@ -10,8 +10,8 @@ createRoot(document.getElementById('root')).render(<App />);
 
 registerPwa().catch(() => {});
 
-if (window.visualViewport) {
+/* if (window.visualViewport) {
     const resize = () => { if (window.visualViewport.scale === 1) document.documentElement.style.setProperty('--pbp-viewport-height', `${window.visualViewport.height}px`); };
     window.visualViewport.addEventListener('resize', resize);
     resize();
-}
+} */
