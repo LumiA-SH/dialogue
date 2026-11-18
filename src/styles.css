@@ -1629,3 +1629,26 @@ textarea:focus {
   flex: 1;
   min-width: 0;
 }
+
+/* ========================================
+   CHARACTER IMAGE ALIGNMENT
+======================================== */
+
+.form-body .pbp-character-image-row {
+  align-items: center;
+}
+
+.pbp-character-image-row .field-stack {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .form-body .pbp-character-image-row {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.pbp-character-image-row + .notice {
+  margin-top: 18px;
+}

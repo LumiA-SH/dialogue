@@ -813,10 +813,16 @@ ${lines}
                     </div>
                 </div>
 
+
                 <div className={`pbp-composer-wrap${twitterMode ? ' pbp-composer-twitter' : ''}`}>
                     <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} hidden />
 
+                    {showCharacters && (
+                        <RoomCharacterManager roomId={room.room_id} userId={userId} characters={characters} links={roomCharacters} selected={selected} onLinksChange={setRoomCharacters} onSelect={selectCharacter} onCharacterSaved={onCharacterSaved} onClose={() => setShowCharacters(false)} />
+                    )}
+
                     {!composerExpanded && twitterMode && (
+
                         <div className="pbp-composer-floating">
                             {(text.trim() || imagePreview) && (
                                 <button className="pbp-composer-draft" type="button" onClick={() => setComposerExpanded(true)}>
@@ -884,10 +890,6 @@ ${lines}
                     )}
                 </div>
             </section>
-
-            {showCharacters && (
-                <RoomCharacterManager roomId={room.room_id} userId={userId} characters={characters} links={roomCharacters} selected={selected} onLinksChange={setRoomCharacters} onSelect={selectCharacter} onCharacterSaved={onCharacterSaved} onClose={() => setShowCharacters(false)} />
-            )}
 
             {editing && (
                 <Modal title="메시지 수정" onClose={() => setEditing(null)}>

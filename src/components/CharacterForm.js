@@ -190,12 +190,8 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
 
                 <label>캐릭터 인장</label>
 
-                <div className="profile-row">
-                    <Avatar
-                        src={imagePreview || portrait}
-                        name={name}
-                        size={80}
-                    />
+                <div className="profile-row pbp-character-image-row">
+                    <Avatar src={imagePreview || portrait} name={name} size={80} />
 
                     <div className="field-stack">
                         <div className="character-image-actions">

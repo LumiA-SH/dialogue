@@ -1,36 +1,305 @@
-.pbp-room-character-row {
+/* ========================================
+   FLOATING CHARACTER PICKER
+======================================== */
+
+.pbp-character-picker-popup {
+    position: absolute;
+    left: 12px;
+    bottom: calc(100% + 8px);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    width: min(420px, calc(100% - 24px));
+    max-height: min(430px, 58dvh);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--sub);
+    color: var(--system-text);
+    box-shadow: 0 16px 42px #152c4b30;
+}
+
+.pbp-character-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 12px;
+    min-height: 58px;
+    padding: 10px 13px 10px 17px;
+    border-bottom: 1px solid var(--border);
+}
+
+.pbp-character-picker-header strong {
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.pbp-character-picker-header button {
     display: grid;
-    gap: 8px;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--sub);
+    color: var(--system-text);
+}
+
+.pbp-character-picker-body {
+    min-height: 0;
+    padding: 8px 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* ========================================
+   CHARACTER LIST
+======================================== */
+
+.pbp-room-character-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
     min-width: 0;
 }
 
-.pbp-room-characters .picker-item {
+.pbp-room-character-row {
+    display: flex;
+    align-items: center;
     width: 100%;
-    color: var(--system-text);
+    min-width: 0;
+    border-bottom: 1px solid var(--border);
     background: var(--sub);
-    border-color: var(--border);
-    min-height: 44px;
 }
 
-.pbp-room-characters .picker-item.active {
-    outline: 2px solid #527ec2;
+.pbp-room-character-row.is-selected {
+    border-left: 3px solid var(--pbp-accent, #527ec2);
+    border-radius: 9px;
+    background: var(--main);
 }
 
-.pbp-room-characters .picker-item span {
+.pbp-room-character-select {
+    display: flex;
     flex: 1;
-    overflow-wrap: anywhere;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    min-height: 64px;
+    padding: 8px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--system-text);
+    text-align: left;
+    cursor: pointer;
 }
 
-.pbp-room-characters .picker-item small {
+.pbp-room-character-select .avatar {
+    flex-shrink: 0;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 9px;
+    object-fit: cover;
+}
+
+.pbp-room-character-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pbp-room-character-select small {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--pbp-muted, #7184a0);
+}
+
+.pbp-room-character-select:hover,
+.pbp-room-character-gear:hover {
+    background: color-mix(in srgb, var(--border) 25%, transparent);
+}
+
+/* ========================================
+   CHARACTER SETTINGS
+======================================== */
+
+.pbp-room-character-gear {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    margin-right: 5px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--system-text);
+}
+
+/* ========================================
+   ADD CHARACTER
+======================================== */
+
+.pbp-room-character-add {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 11px;
+    width: 100%;
+    min-height: 44px;
+    margin: 0;
+    padding: 10px;
+    border: 0;
+    background: transparent;
+    color: var(--system-text);
+    font-size: 13px;
+    font-weight: 650;
+    text-align: left;
+}
+
+.pbp-room-character-add:hover {
+    background: color-mix(in srgb, var(--border) 20%, transparent);
+}
+
+.pbp-room-character-add svg {
     flex-shrink: 0;
 }
 
-.pbp-room-character-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+.pbp-room-character-empty {
+    margin: 0;
+    padding: 15px 10px;
+    color: var(--pbp-muted, #7184a0);
+    font-size: 12px;
 }
 
-.pbp-room-character-actions button {
-    min-height: 44px;
+/* ========================================
+   MANAGEMENT MODAL
+======================================== */
+
+.pbp-room-character-options {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.pbp-room-character-options button {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 13px;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--sub);
+    color: var(--system-text);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: left;
+}
+
+.pbp-room-character-options button:hover {
+    background: var(--main);
+}
+
+.pbp-room-character-options button svg {
+    flex-shrink: 0;
+}
+
+.pbp-room-character-help {
+    margin: 15px 0 0;
+    color: var(--pbp-muted, #7184a0);
+    font-size: 11px;
+    line-height: 1.7;
+}
+
+.pbp-room-character-import {
+    width: 100%;
+    border-bottom: 1px solid var(--border);
+}
+
+.pbp-room-characters .pbp-room-character-add {
+    margin-top: 8px;
+}
+
+/* ========================================
+   MOBILE
+======================================== */
+
+@media (max-width: 560px) {
+    .pbp-character-picker-popup {
+        left: 10px;
+        bottom: calc(100% + 6px);
+        width: calc(100% - 20px);
+        max-height: min(370px, 48dvh);
+    }
+
+    .pbp-character-picker-body {
+        padding: 6px 9px;
+    }
+
+    .pbp-room-character-select {
+        gap: 10px;
+        padding: 8px;
+    }
+
+    .pbp-room-character-gear {
+        width: 34px;
+        height: 34px;
+    }
+}
+
+/* ========================================
+   SELECTED CHARACTER ROW
+======================================== */
+
+.pbp-room-character-row.is-selected {
+    border-left: 3px solid var(--pbp-accent, #527ec2);
+    background: color-mix(in srgb, var(--main) 55%, var(--sub));
+}
+
+.pbp-room-character-row.is-selected .pbp-room-character-select,
+.pbp-room-character-row.is-selected .pbp-room-character-gear {
+    background: transparent;
+}
+
+.pbp-room-character-row.is-selected .pbp-room-character-select:hover,
+.pbp-room-character-row.is-selected .pbp-room-character-gear:hover {
+    background: transparent;
+}
+
+.pbp-character-picker-header {
+    flex-shrink: 0;
+}
+
+.pbp-character-picker-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* ========================================
+   CHARACTER ROW HOVER
+======================================== */
+
+.pbp-room-character-row,
+.pbp-room-character-row.is-selected {
+    background: var(--sub);
+}
+
+.pbp-room-character-row:hover,
+.pbp-room-character-row.is-selected:hover {
+    background: color-mix(in srgb, var(--main) 55%, var(--sub));
+}
+
+.pbp-room-character-row .pbp-room-character-select:hover,
+.pbp-room-character-row .pbp-room-character-gear:hover {
+    background: transparent;
 }
