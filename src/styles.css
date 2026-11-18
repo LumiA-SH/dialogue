@@ -1195,6 +1195,10 @@ textarea:focus {
   margin-bottom: 16px;
 }
 
+.admin-token-toolbar > button {
+  margin-right: 3px;
+}
+
 .admin-token-toolbar p {
   margin: 0;
   color: #73839b;

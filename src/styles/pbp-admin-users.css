@@ -26,6 +26,7 @@
     margin: 0;
     font-size: 18px;
     font-weight: 750;
+    line-height: 36px;
 }
 
 .pbp-admin-users-heading > span {
@@ -37,10 +38,16 @@
 .pbp-admin-users .pbp-admin-users-refresh {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex-shrink: 0;
     gap: 7px;
+    height: 36px;
     min-height: 36px;
-    padding: 7px 12px;
+    margin: 0 2px 0 0;
+    padding: 0 12px;
     font-size: 12px;
+    line-height: 1;
 }
 
 .pbp-admin-users-refresh .is-loading {

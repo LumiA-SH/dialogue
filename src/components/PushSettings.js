@@ -29,7 +29,11 @@ export default function PushSettings({ userId, enabled, onChange }) {
         <h3>신규 RP 알림</h3>
         <p>알림 설정: {enabled ? '켜짐' : '꺼짐'} · 이 기기 푸시: {subscribed ? '구독됨' : '미구독'}</p>
         {support && <p className="notice">{support}</p>}
-        <p className="muted">iPhone·iPad는 iOS/iPadOS 16.4 이상에서 홈 화면 앱으로 실행해 주세요. 알림 권한이 거부되었다면 브라우저 사이트 설정 또는 iOS 설정 → 알림에서 변경할 수 있습니다.</p>
+        <p className="muted">
+            iPhone·iPad는 iOS/iPadOS 16.4 이상에서 홈 화면 앱으로 실행해 주세요.
+            <br />
+            알림 권한이 거부되었다면 브라우저 사이트 설정 또는 iOS 설정 → 알림에서 변경할 수 있습니다.
+        </p>
         <div className="pbp-admin-user-actions">
             <button className="secondary" type="button" disabled={busy} onClick={() => {
                 // iOS requires the permission prompt directly inside a user gesture.
