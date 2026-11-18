@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ImagePlus, Trash2, Download, Save, Image as ImageIcon } from 'lucide-react';
-import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { renderRpMarkdown } from '../pages/RoomView';
 import { supabase } from '../lib/supabase';
 import { adminRoomAction, getRows } from '../lib/api';
 import Modal from './Modal';
@@ -177,7 +176,7 @@ export default function RoomForm({ room = null, onClose, onSaved, onDeleted, can
             const messages = await getRows('messages', query => query.eq('room_id', room.room_id).order('created_at', { ascending: true }));
             const content = messages.map(message => {
                 const name = message.message_type === 'narration' ? '나레이션' : message.character_name_snapshot || '캐릭터';
-                const body = DOMPurify.sanitize(marked.parse(message.text || ''));
+                const body = renderRpMarkdown(message.text);
                 const image = message.img ? `<p><a href="${escapeHtml(message.img)}">첨부 이미지</a></p>` : '';
 
                 return `<article><h3>${escapeHtml(name)} · ${escapeHtml(formatDate(message.created_at))}</h3><div>${body}</div>${image}</article>`;

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowLeft, Send, Image as ImageIcon, PenLine, Trash2, Download, Settings, Plus, ChevronDown, ChevronUp, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
 import { getRows, saveRow, deleteRow } from '../lib/api';
@@ -19,6 +19,24 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const DEFAULT_CHARACTER_COLOR = '#527EC2';
 const COLOR_PATTERN = /^#[0-9a-fA-F]{6}$/;
 const BOTTOM_THRESHOLD = 64;
+
+// Keep all other Markdown syntax literal; use the same renderer for screen and backup.
+const rpMarkdown = new Marked({
+    gfm: false,
+    tokenizer: {
+        code() {}, fences() {}, heading() {}, hr() {}, blockquote() {}, list() {}, html() {}, def() {}, table() {}, lheading() {},
+        codespan() {}, link() {}, reflink() {}, autolink() {}, url() {}, del() {},
+        emStrong(src) { if (src.startsWith('*')) return false; },
+        paragraph(src) {
+            const match = /^([^\n]+(?:\n(?![ \t]*\n)[^\n]+)*)/.exec(src);
+            if (match) return { type: 'paragraph', raw: match[0], text: match[0], tokens: this.lexer.inline(match[0]) };
+        }
+    }
+});
+
+export function renderRpMarkdown(text) {
+    return DOMPurify.sanitize(rpMarkdown.parse(escapeHtml(text || '')), { ALLOWED_TAGS: ['p', 'br', 'em', 'strong'], ALLOWED_ATTR: [] });
+}
 
 function isMessageAfter(message, previous) {
     if (!previous) return true;
@@ -447,7 +465,7 @@ export default function RoomView({ room, userId, characters, preferences, onChar
             }
         const lines = exported.map(message => {
             const name = message.character_name_snapshot || (message.message_type === 'narration' ? '나레이션' : '캐릭터');
-            const content = DOMPurify.sanitize(marked.parse(message.text || ''));
+            const content = renderRpMarkdown(message.text);
             const image = message.img ? `<p><a href="${escapeHtml(message.img)}">첨부 이미지</a></p>` : '';
 
             return `<article><h3>${escapeHtml(name)} · ${escapeHtml(formatDate(message.created_at))}</h3><div>${content}</div>${image}</article>`;
@@ -551,7 +569,7 @@ ${lines}
 
                 {message.text && (
                     <div className="message-body pbp-rp-message-body" dangerouslySetInnerHTML={{
-                        __html: DOMPurify.sanitize(marked.parse(message.text))
+                        __html: renderRpMarkdown(message.text)
                     }} />
                 )}
             </div>
