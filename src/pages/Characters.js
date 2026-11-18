@@ -29,7 +29,7 @@ export default function Characters({ characters, userId, onReload, onError }) {
 
     return (
         <>
-            <div className="section-heading">
+            <div className="section-heading character-page-heading">
                 <div>
                     <h1>캐릭터</h1>
                     <p>내 계정에 등록된 캐릭터</p>

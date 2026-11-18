@@ -1656,3 +1656,33 @@ textarea:focus {
 .pbp-character-image-row + .notice {
   margin-top: 18px;
 }
+
+/* ========================================
+   CHARACTER PAGE MOBILE HEADER
+======================================== */
+
+@media (max-width: 767px) {
+  .section-heading.character-page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .character-page-heading > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .character-page-heading > button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: 6px;
+    margin: 0;
+    padding: 8px 10px;
+    white-space: nowrap;
+  }
+}
