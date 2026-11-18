@@ -36,8 +36,9 @@ const rpMarkdown = new Marked({
 });
 
 export function renderRpMarkdown(text, inline = false) {
-    const escaped = escapeHtml(text || '');
-    const html = inline ? rpMarkdown.parseInline(escaped) : rpMarkdown.parse(escaped);
+    const escaped = escapeHtml(String(text || '').replace(/\r\n?/g, '\n'));
+    const content = rpMarkdown.parseInline(escaped);
+    const html = inline || !escaped ? content : `<p>${content}</p>`;
     return DOMPurify.sanitize(html, { ALLOWED_TAGS: inline ? ['em', 'strong'] : ['p', 'br', 'em', 'strong'], ALLOWED_ATTR: [] });
 }
 
@@ -127,8 +128,21 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         }
         const channel = supabase.channel(`pbp-scene-${room.room_id}`)
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `room_id=eq.${room.room_id}` }, refreshScene)
-            .subscribe(status => { if (status === 'SUBSCRIBED') refreshScene(); });
-        return () => { active = false; supabase.removeChannel(channel); };
+            .subscribe((status, error) => {
+                if (process.env.NODE_ENV === 'development') console.debug('[PBP scene]', { roomId: room.room_id, status, message: error?.message });
+                if (status === 'SUBSCRIBED') refreshScene();
+            });
+        const visible = () => { if (document.visibilityState === 'visible') refreshScene(); };
+        document.addEventListener('visibilitychange', visible);
+        window.addEventListener('pageshow', visible);
+        window.addEventListener('online', visible);
+        return () => {
+            active = false;
+            document.removeEventListener('visibilitychange', visible);
+            window.removeEventListener('pageshow', visible);
+            window.removeEventListener('online', visible);
+            supabase.removeChannel(channel);
+        };
     }, [room.room_id, onError]);
     const twitterMode = preferences?.input_style === 'twitter';
     const showComposer = !twitterMode || composerExpanded;

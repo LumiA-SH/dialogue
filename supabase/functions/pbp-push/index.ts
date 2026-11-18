@@ -21,10 +21,23 @@ function validEndpoint(value: unknown) {
     } catch { return false; }
 }
 
+async function alreadyRead(userId: string, message: { room_id: number; message_id: string; created_at: string }) {
+    const { data: member, error } = await admin.from('room_user').select('last_read_message_id').eq('room_id', message.room_id).eq('user_id', userId).maybeSingle();
+    if (error) throw error;
+    if (!member) return true;
+    if (!member.last_read_message_id) return false;
+    const { data: read, error: readError } = await admin.from('messages').select('message_id').eq('room_id', message.room_id).eq('message_id', member.last_read_message_id)
+        .or(`created_at.gt.${message.created_at},and(created_at.eq.${message.created_at},message_id.gte.${message.message_id})`).maybeSingle();
+    if (readError) throw readError;
+    return Boolean(read);
+}
+
 async function deliver(messageId: string) {
     const { data: message, error } = await admin.from('messages').select('message_id,room_id,user_id,created_at').eq('message_id', messageId).maybeSingle();
     if (error) throw error;
     if (!message) return;
+    // Let the existing foreground read acknowledgement reach the server before delivery.
+    await new Promise(resolve => setTimeout(resolve, 1500));
     const { data: members, error: membersError } = await admin.from('room_user').select('user_id').eq('room_id', message.room_id).neq('user_id', message.user_id);
     if (membersError) throw membersError;
     for (const member of members || []) {
@@ -37,7 +50,7 @@ async function deliver(messageId: string) {
         const { data: subscriptions, error: subscriptionError } = await admin.from('push_subscriptions').select('*').eq('user_id', member.user_id);
         if (subscriptionError) throw subscriptionError;
         for (const subscription of subscriptions || []) {
-            if (!validEndpoint(subscription.endpoint)) continue;
+            if (!validEndpoint(subscription.endpoint) || await alreadyRead(member.user_id, message)) continue;
             const { error: claimError } = await admin.from('push_deliveries').insert({ message_id: messageId, subscription_id: subscription.subscription_id });
             if (claimError?.code === '23505') continue;
             if (claimError) throw claimError;

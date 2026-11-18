@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { BookOpen, Settings, LogOut, Users, MessageSquare, Shield } from 'lucide-react';
 import { supabase, isConfigured } from '../lib/supabase';
 import { getRows, loginWithCode, roomAction } from '../lib/api';
@@ -35,7 +35,8 @@ export default function AppRouter() {
     const [preferences, setPreferences] = useState(null);
     const [notificationOverride, setNotificationOverride] = useState(null);
 
-    const [view, setView] = useState('rooms');
+    const [view, setView] = useState(() => window.location.hash === '#settings' ? 'settings' : 'rooms');
+    const settingsOrigin = useRef(window.history.state?.pbpSettings ? window.history.state.origin : null);
     const [room, setRoom] = useState(null);
     const [deepLinkId, setDeepLinkId] = useState(() => readRoomLink());
     const [roomFormOpen, setRoomFormOpen] = useState(false);
@@ -192,7 +193,54 @@ export default function AppRouter() {
         }
     }
 
+    const restoreSettingsOrigin = useCallback(() => {
+        const saved = settingsOrigin.current;
+        const origin = saved?.userId === session?.user.id ? saved : null;
+        setRoom(null);
+        setError('');
+        setAccountMenuOpen(false);
+        if (origin?.roomId) {
+            setView('rooms');
+            writeRoomLink(origin.roomId);
+            setDeepLinkId(origin.roomId);
+        } else {
+            setView(['rooms', 'characters', 'admin'].includes(origin?.view) ? origin.view : 'rooms');
+            writeRoomLink(null);
+            setDeepLinkId(null);
+        }
+    }, [session?.user.id]);
+
+    useEffect(() => {
+        const changed = event => {
+            if (event.state?.pbpSettings && event.state.origin?.userId === session?.user.id) {
+                settingsOrigin.current = event.state.origin;
+                setRoom(null);
+                setDeepLinkId(null);
+                setView('settings');
+            } else if (view === 'settings') restoreSettingsOrigin();
+        };
+        window.addEventListener('popstate', changed);
+        return () => window.removeEventListener('popstate', changed);
+    }, [view, session?.user.id, restoreSettingsOrigin]);
+
+    function backFromSettings() {
+        if (window.history.state?.pbpSettings && window.history.state.origin?.userId === session?.user.id) window.history.back();
+        else restoreSettingsOrigin();
+    }
+
     function navigate(nextView) {
+        if (nextView === 'settings' && view !== 'settings') {
+            const origin = { view, roomId: room?.room_id || null, userId: session?.user.id };
+            settingsOrigin.current = origin;
+            window.history.pushState({ pbpSettings: true, origin }, '', '#settings');
+            setDeepLinkId(null);
+            setView('settings');
+            setRoom(null);
+            setError('');
+            setAccountMenuOpen(false);
+            return;
+        }
+        if (nextView === 'settings') return;
         writeRoomLink(null);
         setDeepLinkId(null);
         setView(nextView);
@@ -436,6 +484,7 @@ export default function AppRouter() {
 
                         {view === 'settings' && (
                             <SettingsPage
+                                onBack={backFromSettings}
                                 profile={profile}
                                 preferences={preferences}
                                 userId={session.user.id}

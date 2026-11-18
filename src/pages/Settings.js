@@ -24,7 +24,7 @@ const colorLabels = {
     ui_body_text_color: '본문 텍스트'
 };
 
-export default function Settings({ profile, preferences, userId, onSaved, onNotificationChange, onError }) {
+export default function Settings({ profile, preferences, userId, onSaved, onNotificationChange, onError, onBack }) {
     const [name, setName] = useState(profile?.user_name || 'User');
     const [portrait, setPortrait] = useState(profile?.user_portrait || '');
     const [imageFile, setImageFile] = useState(null);
@@ -152,6 +152,7 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                     <h1>설정</h1>
                     <p>프로필과 글쓰기 환경을 설정하세요</p>
                 </div>
+                <button className="secondary" type="button" onClick={onBack}>뒤로가기</button>
             </div>
 
             <form className="settings-form" onSubmit={save}>
@@ -189,8 +190,9 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                     </div>
                 </section>
 
-                <section className="panel">
-                    <h2>글쓰기 설정</h2>
+                <details className="panel">
+                    <summary style={{ cursor: 'pointer' }}><h2 style={{ display: 'inline', margin: 0 }}>글쓰기 설정</h2></summary>
+                    <div style={{ marginTop: 23 }}>
 
                     <label htmlFor="input-style">입력 방식</label>
                     <select id="input-style"
@@ -221,10 +223,13 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                     </p>
 
                     <PushSettings userId={userId} enabled={form.notification_enabled} onChange={enabled => { setForm(previous => ({ ...previous, notification_enabled: enabled })); onNotificationChange?.(enabled); }} />
-                </section>
 
-                <section className="panel">
-                    <h2>UI 색상</h2>
+                    </div>
+                </details>
+
+                <details className="panel">
+                    <summary style={{ cursor: 'pointer' }}><h2 style={{ display: 'inline', margin: 0 }}>UI 색상</h2></summary>
+                    <div style={{ marginTop: 23 }}>
                     <p className="muted">변경 내용은 저장 후 화면 전체에 적용됩니다.</p>
 
                     <ThemePreview colors={form} />
@@ -253,7 +258,9 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                         })} >
                         기본 색상으로 초기화
                     </button>
-                </section>
+
+                    </div>
+                </details>
 
                 <button
                     className="primary save-button"
