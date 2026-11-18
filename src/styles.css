@@ -1686,3 +1686,13 @@ textarea:focus {
     white-space: nowrap;
   }
 }
+
+/* ========================================
+   CHARACTER PAGE PC HEADER
+======================================== */
+
+@media (min-width: 768px) {
+  .character-page-heading > button {
+    transform: translateX(-8px);
+  }
+}
