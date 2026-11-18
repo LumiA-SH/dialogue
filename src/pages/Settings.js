@@ -130,7 +130,7 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
 
             if (error) throw error;
 
-            const { error: settingsError } = await supabase.from('settings').upsert({ ...form, user_id: userId }, { onConflict: 'user_id' });
+            const { error: settingsError } = await supabase.from('settings').upsert({ ...form, send_shortcut: form.send_shortcut === 'alt_enter' ? 'ctrl_enter' : form.send_shortcut, user_id: userId }, { onConflict: 'user_id' });
             if (settingsError) throw settingsError;
 
             setPortrait(portraitUrl);
@@ -206,14 +206,14 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
 
                     <label htmlFor="send-shortcut">전송 단축키</label>
                     <select id="send-shortcut"
-                        value={form.send_shortcut === 'alt_enter' ? 'alt_enter' : 'shift_enter'}
+                        value={['ctrl_enter', 'alt_enter'].includes(form.send_shortcut) ? 'ctrl_enter' : 'shift_enter'}
                         onChange={event => setForm({
                             ...form,
                             send_shortcut: event.target.value
                         })}
                     >
                         <option value="shift_enter">Shift + Enter (기본값)</option>
-                        <option value="alt_enter">Alt + Enter</option>
+                        <option value="ctrl_enter">Ctrl + Enter</option>
                     </select>
 
                     <p className="muted">

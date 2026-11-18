@@ -3,7 +3,7 @@ import { ArrowLeft, Send, Image as ImageIcon, PenLine, Trash2, Download, Setting
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
-import { getRows, saveRow, deleteRow } from '../lib/api';
+import { getRows, saveRow } from '../lib/api';
 import Modal from '../components/Modal';
 import Avatar from '../components/Avatar';
 import RoomCharacterManager from '../components/RoomCharacterManager';
@@ -22,7 +22,8 @@ const BOTTOM_THRESHOLD = 64;
 
 // Keep all other Markdown syntax literal; use the same renderer for screen and backup.
 const rpMarkdown = new Marked({
-    gfm: false,
+    gfm: true,
+    breaks: true,
     tokenizer: {
         code() {}, fences() {}, heading() {}, hr() {}, blockquote() {}, list() {}, html() {}, def() {}, table() {}, lheading() {},
         codespan() {}, link() {}, reflink() {}, autolink() {}, url() {}, del() {},
@@ -109,10 +110,29 @@ export default function RoomView({ room, userId, characters, preferences, onChar
     const readWriteRef = useRef(Promise.resolve());
     const leavingRef = useRef(false);
 
-    const sceneImage = room.scene_img || room.room_bg_img || room.room_background_image || room.room_img || '';
+    const [liveScene, setLiveScene] = useState(null);
+    const sceneImage = liveScene?.roomId === room.room_id ? liveScene.image : room.scene_img || room.room_bg_img || room.room_background_image || room.room_img || '';
+
+    useEffect(() => { setLiveScene(null); }, [room.room_id, room.scene_img, room.room_img]);
+
+    useEffect(() => {
+        let active = true;
+        let latestRequest = 0;
+        async function refreshScene() {
+            const request = ++latestRequest;
+            const { data, error } = await supabase.from('rooms').select('room_id,scene_img,room_img').eq('room_id', room.room_id).maybeSingle();
+            if (!active || request !== latestRequest) return;
+            if (error) { onError(error.message); return; }
+            if (data) setLiveScene({ roomId: data.room_id, image: data.scene_img || data.room_img || '' });
+        }
+        const channel = supabase.channel(`pbp-scene-${room.room_id}`)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `room_id=eq.${room.room_id}` }, refreshScene)
+            .subscribe(status => { if (status === 'SUBSCRIBED') refreshScene(); });
+        return () => { active = false; supabase.removeChannel(channel); };
+    }, [room.room_id, onError]);
     const twitterMode = preferences?.input_style === 'twitter';
     const showComposer = !twitterMode || composerExpanded;
-    const sendShortcut = preferences?.send_shortcut === 'alt_enter' ? 'alt_enter' : 'shift_enter';
+    const sendShortcut = ['ctrl_enter', 'alt_enter'].includes(preferences?.send_shortcut) ? 'ctrl_enter' : 'shift_enter';
 
     const load = useCallback(async () => {
         try {
@@ -186,6 +206,14 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         };
     }, [room.room_id, load]);
 
+    useEffect(() => {
+        const refreshDeletedMessage = event => {
+            if (event.detail?.roomId === room.room_id) load();
+        };
+        window.addEventListener('pbp-message-deleted', refreshDeletedMessage);
+        return () => window.removeEventListener('pbp-message-deleted', refreshDeletedMessage);
+    }, [room.room_id, load]);
+
     const persistRead = useCallback((message) => {
         if (document.visibilityState !== 'visible') return readWriteRef.current;
         if (!message || !isMessageAfter(message, readCursorRef.current)) {
@@ -195,15 +223,8 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         readCursorRef.current = message;
 
         const task = readWriteRef.current.catch(() => {}).then(async () => {
-            const { data, error } = await supabase.from('room_user')
-                .update({ last_read_message_id: message.message_id })
-                .eq('room_id', room.room_id)
-                .eq('user_id', userId)
-                .select('last_read_message_id')
-                .maybeSingle();
-
+            const { error } = await supabase.rpc('pbp_message_operation', { p_room_id: room.room_id, p_message_id: message.message_id, p_action: 'read' });
             if (error) throw error;
-            if (!data) throw new Error('읽음 위치를 저장하지 못했습니다.');
         });
 
         readWriteRef.current = task;
@@ -217,7 +238,7 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         });
 
         return task;
-    }, [room.room_id, userId, onError]);
+    }, [room.room_id, onError]);
 
     // 첫 화면이 표시되기 전에 스크롤 위치를 설정합니다.
     useLayoutEffect(() => {
@@ -322,6 +343,50 @@ export default function RoomView({ room, userId, characters, preferences, onChar
     useEffect(() => {
         if (composerExpanded) textareaRef.current?.focus();
     }, [composerExpanded]);
+
+    const resizeMessengerInput = useCallback(() => {
+        const input = textareaRef.current;
+        if (twitterMode || !input) return;
+        // Read the existing responsive CSS baseline before measuring wrapped content.
+        input.style.removeProperty('height');
+        const styles = window.getComputedStyle(input);
+        const baseline = parseFloat(styles.height) || input.offsetHeight;
+        const border = (parseFloat(styles.borderTopWidth) || 0) + (parseFloat(styles.borderBottomWidth) || 0);
+        const cssMaximum = parseFloat(styles.maxHeight) || Infinity;
+        const visibleHeight = window.visualViewport?.height || window.innerHeight;
+        const maximum = Math.max(baseline, Math.min(cssMaximum, visibleHeight * 0.45));
+        input.style.overflowY = 'hidden';
+        input.style.height = '0px';
+        const contentHeight = input.scrollHeight + border;
+        input.style.height = `${Math.min(maximum, Math.max(baseline, contentHeight))}px`;
+        input.style.overflowY = contentHeight > maximum ? 'auto' : 'hidden';
+    }, [twitterMode]);
+
+    useLayoutEffect(() => { resizeMessengerInput(); }, [text, resizeMessengerInput]);
+
+    useLayoutEffect(() => {
+        const input = textareaRef.current;
+        if (twitterMode || !input) return;
+        const originalResize = input.style.resize;
+        input.style.resize = 'none';
+        let width = input.getBoundingClientRect().width;
+        const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
+            const nextWidth = input.getBoundingClientRect().width;
+            if (nextWidth !== width) { width = nextWidth; resizeMessengerInput(); }
+        });
+        observer?.observe(input);
+        window.addEventListener('resize', resizeMessengerInput);
+        const viewport = window.visualViewport;
+        viewport?.addEventListener('resize', resizeMessengerInput);
+        return () => {
+            observer?.disconnect();
+            window.removeEventListener('resize', resizeMessengerInput);
+            viewport?.removeEventListener('resize', resizeMessengerInput);
+            input.style.removeProperty('height');
+            input.style.removeProperty('overflow-y');
+            input.style.resize = originalResize;
+        };
+    }, [twitterMode, resizeMessengerInput]);
 
     const availableCharacters = characters.filter(character =>
         roomCharacters.some(link => link.character_id === character.character_id && link.is_active !== false)
@@ -433,7 +498,9 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         if (!window.confirm('이 메시지를 삭제할까요?')) return;
 
         try {
-            await deleteRow('messages', 'message_id', message.message_id);
+            const { data: deletedId, error: deleteError } = await supabase.rpc('pbp_message_operation', { p_room_id: room.room_id, p_message_id: message.message_id, p_action: 'delete' });
+            if (deleteError) throw deleteError;
+            if (deletedId !== message.message_id) throw new Error('메시지 삭제 결과를 확인하지 못했습니다.');
             await load();
         } catch (err) {
             onError(err.message);
@@ -502,8 +569,8 @@ ${lines}
     function onKeyDown(event) {
         if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
 
-        const shouldSend = sendShortcut === 'alt_enter'
-            ? event.altKey && !event.shiftKey && !event.ctrlKey && !event.metaKey
+        const shouldSend = sendShortcut === 'ctrl_enter'
+            ? event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey
             : event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey;
 
         if (!shouldSend) return;
@@ -785,7 +852,7 @@ ${lines}
                                         <ImageIcon size={19} />
                                     </button>
                                     <span className="pbp-composer-shortcut">
-                                        {sendShortcut === 'alt_enter' ? 'Alt' : 'Shift'} + Enter 전송 · Enter 줄바꿈
+                                        {sendShortcut === 'ctrl_enter' ? 'Ctrl' : 'Shift'} + Enter 전송 · Enter 줄바꿈
                                     </span>
                                     <button className="pbp-composer-send" type="button" disabled={sending || (!text.trim() && !imageFile)} onClick={send} title="전송">
                                         <Send size={19} />

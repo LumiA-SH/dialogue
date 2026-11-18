@@ -228,6 +228,12 @@
     display: none !important;
 }
 
+@media (min-width: 768px) {
+    .pbp-scene-collapsed .pbp-rp-mobile-back {
+        display: inline-flex !important;
+    }
+}
+
 /* ========================================
    05. LOG SCROLL
 ======================================== */

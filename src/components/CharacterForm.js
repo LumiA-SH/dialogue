@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ImagePlus, Trash2, Save } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { saveRow, deleteRow } from '../lib/api';
+import { saveRow } from '../lib/api';
 import Modal from './Modal';
 import Avatar from './Avatar';
 
@@ -162,7 +162,8 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
         setSaving(true);
 
         try {
-            await deleteRow('characters', 'character_id', character.character_id);
+            const { error: deleteError } = await supabase.from('characters').delete().eq('character_id', character.character_id).eq('user_id', userId).select('character_id').single();
+            if (deleteError) throw deleteError;
             await onSaved?.();
         } catch (err) {
             onError(err.message || '캐릭터 삭제에 실패했습니다.');

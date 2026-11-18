@@ -55,11 +55,12 @@ export function createSitePresence(client, userId, onChange) {
             debug('track', { roomId: entry.roomId, result });
             if (!disposed && entries.get(entry.roomId) === entry && result !== 'ok') {
                 entry.joined = false;
+                entry.retryAt = Date.now() + 30000;
                 emit();
             }
         }).catch(error => {
             debug('track-error', { roomId: entry.roomId, message: error.message });
-            if (!disposed && entries.get(entry.roomId) === entry) { entry.joined = false; emit(); }
+            if (!disposed && entries.get(entry.roomId) === entry) { entry.joined = false; entry.retryAt = Date.now() + 30000; emit(); }
         });
     }
 
@@ -116,8 +117,8 @@ export function createSitePresence(client, userId, onChange) {
         entry.joined = false;
         entry.sequence += 1;
         // Queue cleanup after any in-flight track to avoid restoring stale presence.
-        entry.queue.catch(() => {}).then(() => entry.channel.untrack()).catch(() => {}).finally(() => {
-            client.removeChannel(entry.channel).catch(() => {});
+        return entry.queue.catch(() => {}).then(() => entry.channel.untrack()).catch(() => {}).finally(() => {
+            return client.removeChannel(entry.channel).catch(() => {});
         });
     }
 
@@ -125,7 +126,11 @@ export function createSitePresence(client, userId, onChange) {
         const channel = client.channel(`pbp-presence-${roomId}`, { config: { private: true, broadcast: { ack: true, self: false }, presence: { key: clientId } } });
         const entry = { roomId, channel, joined: false, typing: false, sequence: 0, typingSequence: 0, lastSent: 0, remote: new Map(), queue: Promise.resolve() };
         entries.set(roomId, entry);
-        channel.on('broadcast', { event: 'typing' }, ({ payload }) => receiveTyping(entry, payload)).on('system', {}, message => debug('system', { roomId, message })).on('presence', { event: 'sync' }, () => {
+        channel.on('broadcast', { event: 'message-deleted' }, ({ payload }) => {
+            if (disposed || entries.get(roomId) !== entry || payload?.room_id !== roomId || typeof payload.message_id !== 'string') return;
+            // Re-fetch under RLS; never remove a message based only on a client-sendable event.
+            window.dispatchEvent(new CustomEvent('pbp-message-deleted', { detail: { roomId } }));
+        }).on('broadcast', { event: 'typing' }, ({ payload }) => receiveTyping(entry, payload)).on('system', {}, message => debug('system', { roomId, message })).on('presence', { event: 'sync' }, () => {
             debug('sync', { roomId, peers: Object.values(channel.presenceState()).flat().map(meta => ({ roomId: meta.room_id, self: meta.user_id === userId, typing: meta.typing, sequence: meta.typing_sequence })) });
             emit();
         }).subscribe((status, error) => {
@@ -133,7 +138,7 @@ export function createSitePresence(client, userId, onChange) {
             if (disposed || entries.get(roomId) !== entry) return;
             entry.joined = status === 'SUBSCRIBED';
             if (entry.joined) publish(entry);
-            else { stopTyping(entry); entry.remote.clear(); }
+            else { entry.retryAt = Date.now() + 30000; stopTyping(entry); entry.remote.clear(); }
             emit();
         });
     }
@@ -153,7 +158,20 @@ export function createSitePresence(client, userId, onChange) {
             }
             debug('memberships', { roomIds: [...roomIds] });
             entries.forEach((entry, id) => { if (!roomIds.has(id)) { entries.delete(id); remove(entry); } });
-            roomIds.forEach(id => { if (!entries.has(id)) add(id); });
+            for (const id of roomIds) {
+                const entry = entries.get(id);
+                if (!entry) { add(id); continue; }
+                if (entry.joined || Date.now() < (entry.retryAt || 0)) continue;
+                if (entry.channel.state === 'joined') {
+                    entry.joined = true;
+                    publish(entry);
+                } else if (entry.channel.state === 'closed') {
+                    entries.delete(id);
+                    await remove(entry);
+                    if (disposed) return;
+                    add(id);
+                }
+            }
             emit();
         } catch (error) {
             debug('membership-error', { code: error.code, message: error.message });
@@ -185,7 +203,7 @@ export function createSitePresence(client, userId, onChange) {
     function resume() {
         if (disposed || navigator.onLine === false) return;
         entries.forEach(entry => {
-            if (entry.channel.state === 'joined' && !entry.joined) { entry.joined = true; publish(entry); }
+            if (entry.channel.state === 'joined' && !entry.joined && Date.now() >= (entry.retryAt || 0)) { entry.joined = true; publish(entry); }
         });
         refresh();
     }
