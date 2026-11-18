@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ArrowLeft, Send, Image as ImageIcon, PenLine, Trash2, Download, Settings, Plus, ChevronDown, ChevronUp, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { ArrowLeft, Send, Image as ImageIcon, BookOpen, PenLine, Trash2, Download, Settings, Plus, ChevronDown, ChevronUp, X, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { supabase } from '../lib/supabase';
@@ -530,17 +530,32 @@ export default function RoomView({ room, userId, characters, preferences, onChar
     }
 
     async function saveEdit() {
-        if (!editing) return;
+        const draft = editing;
+        if (!draft || draft.editSaving) return;
+
+        const hasImage = Boolean(draft.editImageFile || (!draft.editImageRemoved && draft.img));
+        if (!draft.text.trim() && !hasImage) return;
+
+        setEditing(current => current ? { ...current, editSaving: true } : current);
 
         try {
+            let imageUrl = draft.editImageRemoved ? null : draft.img || null;
+
+            if (draft.editImageFile) {
+                imageUrl = await uploadImage(draft.editImageFile);
+            }
+
             await saveRow('messages', {
-                text: editing.text.trim() || null,
-                img: editing.img || null
-            }, 'message_id', editing.message_id);
+                text: draft.text.trim() || null,
+                img: imageUrl
+            }, 'message_id', draft.message_id);
+
+            if (draft.editPreviewUrl) URL.revokeObjectURL(draft.editPreviewUrl);
 
             setEditing(null);
             await load();
         } catch (err) {
+            setEditing(current => current ? { ...current, editSaving: false } : current);
             onError(err.message);
         }
     }
@@ -690,8 +705,8 @@ ${lines}
                 )}
 
                 {message.message_id === unreadStartId && (
-                    <div className="pbp-rp-unread-divider" ref={unreadDividerRef} role="separator" aria-label="여기부터 새 메시지">
-                        <span>여기부터 새 메시지</span>
+                    <div className="pbp-rp-unread-divider" ref={unreadDividerRef} role="separator" aria-label="읽지 않은 메시지">
+                        <span>읽지 않은 메시지</span>
                     </div>
                 )}
 
@@ -739,8 +754,7 @@ ${lines}
                     </>
                 ) : (
                     <div className="pbp-scene-placeholder">
-                        <ImageIcon size={32} />
-                        <span>배경 이미지가 등록되지 않았습니다.</span>
+                        <BookOpen size={48} />
                     </div>
                 )}
 
@@ -797,7 +811,13 @@ ${lines}
 
                     {mobileSceneOpen && (
                         <div className="pbp-mobile-scene-image">
-                            {sceneImage ? <img src={sceneImage} alt="현재 방의 장면" /> : <span>등록된 배경 이미지가 없습니다.</span>}
+                            {sceneImage ? (
+                                <img src={sceneImage} alt="현재 방의 장면" />
+                            ) : (
+                                <div className="pbp-scene-placeholder">
+                                    <BookOpen size={40} />
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -892,13 +912,86 @@ ${lines}
             </section>
 
             {editing && (
-                <Modal title="메시지 수정" onClose={() => setEditing(null)}>
+                <Modal title="메시지 수정" onClose={() => {
+                    if (editing.editSaving) return;
+                    if (editing.editPreviewUrl) URL.revokeObjectURL(editing.editPreviewUrl);
+                    setEditing(null);
+                }}>
                     <div className="form-body">
                         <label>본문</label>
-                        <textarea rows={6} value={editing.text} onChange={event => setEditing({ ...editing, text: event.target.value })} />
-                        <label>이미지 URL</label>
-                        <input value={editing.img} onChange={event => setEditing({ ...editing, img: event.target.value })} />
-                        <button className="primary full" disabled={!editing.text.trim() && !editing.img.trim()} onClick={saveEdit}>수정 저장</button>
+                        <textarea rows={6} value={editing.text} disabled={editing.editSaving}
+                                  onChange={event => setEditing({ ...editing, text: event.target.value })} />
+
+                        <label>첨부 이미지</label>
+
+                        {(editing.editPreviewUrl || (!editing.editImageRemoved && editing.img)) && (
+                            <button className="pbp-rp-image-button" type="button" title="이미지 확대"
+                                    onClick={() => setViewImage(editing.editPreviewUrl || editing.img)}>
+                                <img className="pbp-rp-message-image" style={{ maxHeight: 180 }}
+                                     src={editing.editPreviewUrl || editing.img} alt="첨부 이미지 미리보기" />
+                            </button>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                            <label className="secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, margin: 0, cursor: 'pointer' }}>
+                                <ImageIcon size={16} />
+                                {editing.editPreviewUrl || (!editing.editImageRemoved && editing.img) ? '이미지 변경' : '이미지 첨부'}
+                                <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden disabled={editing.editSaving}
+                                       onChange={event => {
+                                           const file = event.target.files?.[0];
+                                           event.target.value = '';
+                                           if (!file) return;
+
+                                           if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+                                               onError('JPG, PNG, WebP, GIF 이미지만 등록할 수 있습니다.');
+                                               return;
+                                           }
+
+                                           if (file.size > MAX_IMAGE_SIZE) {
+                                               onError('이미지는 최대 5MB까지 등록할 수 있습니다.');
+                                               return;
+                                           }
+
+                                           const previewUrl = URL.createObjectURL(file);
+                                           if (editing.editPreviewUrl) URL.revokeObjectURL(editing.editPreviewUrl);
+
+                                           setEditing({
+                                               ...editing,
+                                               editImageFile: file,
+                                               editImageRemoved: false,
+                                               editPreviewUrl: previewUrl
+                                           });
+                                       }} />
+                            </label>
+
+                            {(editing.editImageFile || (!editing.editImageRemoved && editing.img)) && (
+                                <button className="danger-outline" type="button" disabled={editing.editSaving}
+                                        onClick={() => {
+                                            if (editing.editPreviewUrl) URL.revokeObjectURL(editing.editPreviewUrl);
+                                            setEditing({
+                                                ...editing,
+                                                editImageFile: null,
+                                                editImageRemoved: true,
+                                                editPreviewUrl: ''
+                                            });
+                                        }}>
+                                    <Trash2 size={16} /> 이미지 제거
+                                </button>
+                            )}
+
+                            {editing.editImageRemoved && editing.img && (
+                                <button className="secondary" type="button" disabled={editing.editSaving}
+                                        onClick={() => setEditing({ ...editing, editImageRemoved: false })}>
+                                    기존 이미지 복구
+                                </button>
+                            )}
+                        </div>
+
+                        <button className="primary full" type="button"
+                                disabled={editing.editSaving || (!editing.text.trim() && !editing.editImageFile && (editing.editImageRemoved || !editing.img))}
+                                onClick={saveEdit}>
+                            {editing.editSaving ? '저장 중...' : '수정 저장'}
+                        </button>
                     </div>
                 </Modal>
             )}
