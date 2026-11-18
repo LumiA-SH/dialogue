@@ -3,6 +3,7 @@ import { BookOpen, Plus, UserPlus, Lock, Globe, Check, X, Search } from 'lucide-
 import RoomForm from '../components/RoomForm';
 import Modal from '../components/Modal';
 import { roomAction } from '../lib/api';
+import { renderRpMarkdown } from './RoomView';
 
 function formatDate(value) {
     return value
@@ -51,9 +52,7 @@ function RoomCard({ room, onSelect, onInvite, joiningRoomId }) {
                 <span className="pbp-room-info">
                     <strong className="pbp-room-name">{room.room_name}</strong>
 
-                    <span className="pbp-room-preview">
-                        {getMessagePreview(room)}
-                    </span>
+                    <span className="pbp-room-preview" style={{ fontSynthesis: 'weight style' }} dangerouslySetInnerHTML={{ __html: renderRpMarkdown(getMessagePreview(room), true) }} />
 
                     <span className="pbp-room-meta">
                         <span className="pbp-room-date">{formatDate(room.created_at)}</span>

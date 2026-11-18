@@ -34,8 +34,10 @@ const rpMarkdown = new Marked({
     }
 });
 
-export function renderRpMarkdown(text) {
-    return DOMPurify.sanitize(rpMarkdown.parse(escapeHtml(text || '')), { ALLOWED_TAGS: ['p', 'br', 'em', 'strong'], ALLOWED_ATTR: [] });
+export function renderRpMarkdown(text, inline = false) {
+    const escaped = escapeHtml(text || '');
+    const html = inline ? rpMarkdown.parseInline(escaped) : rpMarkdown.parse(escaped);
+    return DOMPurify.sanitize(html, { ALLOWED_TAGS: inline ? ['em', 'strong'] : ['p', 'br', 'em', 'strong'], ALLOWED_ATTR: [] });
 }
 
 function isMessageAfter(message, previous) {
