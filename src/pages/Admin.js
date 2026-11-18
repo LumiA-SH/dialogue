@@ -182,9 +182,11 @@ export default function Admin({ onError }) {
                     <label htmlFor="admin-user-name">사용자 닉네임</label>
                     <input id="admin-user-name" maxLength={24} value={userName} onChange={event => setUserName(event.target.value)} placeholder="새 사용자 이름" disabled={busy} required />
 
-                    <button className="primary" type="submit" disabled={busy || !userName.trim()}>
-                        <Plus size={17} /> 사용자 생성 및 코드 발급
-                    </button>
+                    <div className="admin-auth-actions">
+                        <button className="primary" type="submit" disabled={busy || !userName.trim()}>
+                            <Plus size={17} /> 사용자 생성 및 코드 발급
+                        </button>
+                    </div>
                 </form>
             </section>
 
@@ -195,13 +197,14 @@ export default function Admin({ onError }) {
                     <label htmlFor="admin-target-id">사용자 ID</label>
                     <input id="admin-target-id" value={targetUserId} onChange={event => setTargetUserId(event.target.value)} placeholder="사용자 UUID" disabled={busy} />
 
-                    <button className="secondary" type="button" onClick={rotateCode} disabled={busy || !targetUserId.trim()}>
-                        <RefreshCw size={17} /> 접속 코드 재발급
-                    </button>
-
-                    <button className="danger-outline" type="button" onClick={revokeCode} disabled={busy || !targetUserId.trim()}>
-                        <Trash2 size={17} /> 접속 코드 폐기
-                    </button>
+                    <div className="admin-auth-actions">
+                        <button className="secondary" type="button" onClick={rotateCode} disabled={busy || !targetUserId.trim()}>
+                            <RefreshCw size={17} /> 접속 코드 재발급
+                        </button>
+                        <button className="danger-outline" type="button" onClick={revokeCode} disabled={busy || !targetUserId.trim()}>
+                            <Trash2 size={17} /> 접속 코드 폐기
+                        </button>
+                    </div>
                 </div>
             </section>
 

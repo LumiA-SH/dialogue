@@ -326,3 +326,45 @@
         padding: 7px 9px;
     }
 }
+
+.admin-users .admin-create-actions,
+.admin-users .admin-code-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.admin-users .admin-create-actions button,
+.admin-users .admin-code-actions button {
+    margin: 0;
+}
+
+/* ========================================
+   ADMIN AUTH BUTTON SPACING
+======================================== */
+
+/* ========================================
+   ADMIN AUTH ACTIONS
+======================================== */
+
+.admin-auth-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.admin-auth-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: auto;
+    margin: 0;
+}
+
+.admin-auth-actions button svg {
+    flex-shrink: 0;
+}
