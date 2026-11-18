@@ -10,7 +10,7 @@ import Login from '../pages/Login';
 import ProfileSetup from '../pages/ProfileSetup';
 import RpNotifications from '../components/RpNotifications';
 import { removeDevicePush } from '../lib/pwa';
-import { readRoomLink, writeRoomLink } from '../lib/roomLinks';
+import { readRoomLink } from '../lib/roomLinks';
 import { useSitePresence } from '../lib/sitePresence';
 import Rooms from '../pages/Rooms';
 import RoomView from '../pages/RoomView';
@@ -26,6 +26,18 @@ const defaultColors = {
     ui_body_text_color: '#243B53'
 };
 
+function readPageRoute() {
+    const roomId = readRoomLink();
+    const page = window.location.hash.slice(1);
+    return { view: !roomId && ['characters', 'settings', 'admin'].includes(page) ? page : 'rooms', roomId };
+}
+
+function writePageRoute(route, userId, depth, replace = false) {
+    const url = new URL(window.location.href);
+    url.hash = route.roomId ? 'room=' + route.roomId : route.view === 'rooms' ? '' : route.view;
+    window.history[replace ? 'replaceState' : 'pushState']({ pbpNavigation: { ...route, userId, depth } }, '', url);
+}
+
 export default function AppRouter() {
     const [session, setSession] = useState(null);
     const [profile, setProfile] = useState(null);
@@ -35,8 +47,10 @@ export default function AppRouter() {
     const [preferences, setPreferences] = useState(null);
     const [notificationOverride, setNotificationOverride] = useState(null);
 
-    const [view, setView] = useState(() => window.location.hash === '#settings' ? 'settings' : 'rooms');
-    const settingsOrigin = useRef(window.history.state?.pbpSettings ? window.history.state.origin : null);
+    const [view, setView] = useState(() => readPageRoute().view);
+    const roomExitRef = useRef(null);
+    const navigationRequest = useRef(0);
+    const navigationUrl = useRef(window.location.href);
     const [room, setRoom] = useState(null);
     const [deepLinkId, setDeepLinkId] = useState(() => readRoomLink());
     const [roomFormOpen, setRoomFormOpen] = useState(false);
@@ -127,11 +141,43 @@ export default function AppRouter() {
         };
     }, [session, refresh]);
 
-    useEffect(() => {
-        const changed = () => setDeepLinkId(readRoomLink());
-        window.addEventListener('hashchange', changed);
-        return () => window.removeEventListener('hashchange', changed);
+    const showRoute = useCallback(route => {
+        setRoom(null);
+        setView(route.view);
+        setDeepLinkId(route.roomId || null);
+        setRoomFormOpen(false);
+        setError('');
+        setAccountMenuOpen(false);
     }, []);
+
+    useEffect(() => {
+        if (!session?.user.id) return;
+        const entry = window.history.state?.pbpNavigation;
+        const route = readPageRoute();
+        writePageRoute(route, session.user.id, entry?.userId === session.user.id ? entry.depth : 0, true);
+        navigationUrl.current = window.location.href;
+        showRoute(route);
+        const changed = async () => {
+            if (navigationUrl.current === window.location.href) return;
+            navigationUrl.current = window.location.href;
+            const request = ++navigationRequest.current;
+            const saved = window.history.state?.pbpNavigation;
+            const next = saved && saved.userId !== session.user.id ? { view: 'rooms', roomId: null } : readPageRoute();
+            if (roomExitRef.current) await roomExitRef.current();
+            if (request !== navigationRequest.current) return;
+            writePageRoute(next, session.user.id, saved?.userId === session.user.id ? saved.depth : 0, true);
+            navigationUrl.current = window.location.href;
+            showRoute(next);
+            reload();
+        };
+        window.addEventListener('popstate', changed);
+        window.addEventListener('hashchange', changed);
+        return () => {
+            navigationRequest.current += 1;
+            window.removeEventListener('popstate', changed);
+            window.removeEventListener('hashchange', changed);
+        };
+    }, [session?.user.id, showRoute, reload]);
 
     useEffect(() => {
         if (!session?.user.id || !profile || profile.profile_completed === false || !deepLinkId) return;
@@ -152,16 +198,20 @@ export default function AppRouter() {
                 setError('');
                 setDeepLinkId(null);
             } catch (err) {
-                if (active) { setError(err.message); setDeepLinkId(null); writeRoomLink(null); }
+                if (active) { setError(err.message); setDeepLinkId(null); setRoom(null); setView('rooms'); writePageRoute({ view: 'rooms', roomId: null }, session.user.id, window.history.state?.pbpNavigation?.depth || 0, true); navigationUrl.current = window.location.href; }
             }
         }
         openLink();
         return () => { active = false; };
     }, [session, profile, deepLinkId]);
 
-    function openNotification(id) {
-        writeRoomLink(id);
-        setDeepLinkId(id);
+    async function openNotification(id) {
+        if (room?.room_id === id) return;
+        const request = ++navigationRequest.current;
+        if (roomExitRef.current) await roomExitRef.current();
+        if (request !== navigationRequest.current) return;
+        recordRoute({ view: 'rooms', roomId: id });
+        showRoute({ view: 'rooms', roomId: id });
     }
 
     async function login(code) {
@@ -193,60 +243,42 @@ export default function AppRouter() {
         }
     }
 
-    const restoreSettingsOrigin = useCallback(() => {
-        const saved = settingsOrigin.current;
-        const origin = saved?.userId === session?.user.id ? saved : null;
-        setRoom(null);
-        setError('');
-        setAccountMenuOpen(false);
-        if (origin?.roomId) {
-            setView('rooms');
-            writeRoomLink(origin.roomId);
-            setDeepLinkId(origin.roomId);
-        } else {
-            setView(['rooms', 'characters', 'admin'].includes(origin?.view) ? origin.view : 'rooms');
-            writeRoomLink(null);
-            setDeepLinkId(null);
-        }
-    }, [session?.user.id]);
-
     useEffect(() => {
-        const changed = event => {
-            if (event.state?.pbpSettings && event.state.origin?.userId === session?.user.id) {
-                settingsOrigin.current = event.state.origin;
-                setRoom(null);
-                setDeepLinkId(null);
-                setView('settings');
-            } else if (view === 'settings') restoreSettingsOrigin();
-        };
-        window.addEventListener('popstate', changed);
-        return () => window.removeEventListener('popstate', changed);
-    }, [view, session?.user.id, restoreSettingsOrigin]);
+        if (profile && profile.role !== 1 && view === 'admin') {
+            const next = { view: 'rooms', roomId: null };
+            writePageRoute(next, session?.user.id, window.history.state?.pbpNavigation?.depth || 0, true);
+            navigationUrl.current = window.location.href;
+            showRoute(next);
+        }
+    }, [profile, view, session?.user.id, showRoute]);
 
-    function backFromSettings() {
-        if (window.history.state?.pbpSettings && window.history.state.origin?.userId === session?.user.id) window.history.back();
-        else restoreSettingsOrigin();
+    function recordRoute(next) {
+        navigationRequest.current += 1;
+        const saved = window.history.state?.pbpNavigation;
+        const depth = saved?.userId === session?.user.id ? saved.depth : 0;
+        writePageRoute({ view, roomId: room?.room_id || null }, session?.user.id, depth, true);
+        writePageRoute(next, session?.user.id, depth + 1);
+        navigationUrl.current = window.location.href;
+    }
+
+    function goBack() {
+        const saved = window.history.state?.pbpNavigation;
+        if (saved?.userId === session?.user.id && saved.depth > 0) {
+            window.history.back();
+        } else {
+            navigationRequest.current += 1;
+            const next = { view: 'rooms', roomId: null };
+            writePageRoute(next, session?.user.id, 0, true);
+            navigationUrl.current = window.location.href;
+            showRoute(next);
+        }
     }
 
     function navigate(nextView) {
-        if (nextView === 'settings' && view !== 'settings') {
-            const origin = { view, roomId: room?.room_id || null, userId: session?.user.id };
-            settingsOrigin.current = origin;
-            window.history.pushState({ pbpSettings: true, origin }, '', '#settings');
-            setDeepLinkId(null);
-            setView('settings');
-            setRoom(null);
-            setError('');
-            setAccountMenuOpen(false);
-            return;
-        }
-        if (nextView === 'settings') return;
-        writeRoomLink(null);
-        setDeepLinkId(null);
-        setView(nextView);
-        setRoom(null);
-        setError('');
-        setAccountMenuOpen(false);
+        if (view === nextView && !room) return;
+        const next = { view: nextView, roomId: null };
+        recordRoute(next);
+        showRoute(next);
     }
 
     async function selectRoom(selectedRoom) {
@@ -257,6 +289,7 @@ export default function AppRouter() {
             return;
         }
 
+        const request = ++navigationRequest.current;
         setJoiningRoomId(selectedRoom.room_id);
         setError('');
 
@@ -271,7 +304,8 @@ export default function AppRouter() {
                 ));
             }
 
-            writeRoomLink(selectedRoom.room_id);
+            if (request !== navigationRequest.current) return;
+            recordRoute({ view: 'rooms', roomId: selectedRoom.room_id });
             setDeepLinkId(null);
             setRoom({ ...selectedRoom, is_member: true });
             setView('rooms');
@@ -284,9 +318,7 @@ export default function AppRouter() {
     }
 
     function closeRoom() {
-        writeRoomLink(null);
-        setDeepLinkId(null);
-        setRoom(null);
+        goBack();
         reload();
     }
 
@@ -448,6 +480,7 @@ export default function AppRouter() {
                         {view === 'rooms' && !room && (
                             <Rooms
                                 rooms={rooms}
+                                onBack={goBack}
                                 invites={invites}
                                 isAdmin={isAdmin}
                                 joiningRoomId={joiningRoomId}
@@ -468,6 +501,7 @@ export default function AppRouter() {
                                 onCharacterSaved={saved => setCharacters(previous => [saved, ...previous.filter(item => item.character_id !== saved.character_id)])}
                                 preferences={preferences}
                                 onBack={closeRoom}
+                                beforeLeaveRef={roomExitRef}
                                 onEdit={() => setRoomFormOpen(true)}
                                 onError={setError}
                             />
@@ -476,6 +510,7 @@ export default function AppRouter() {
                         {view === 'characters' && (
                             <Characters
                                 characters={characters}
+                                onBack={goBack}
                                 userId={session.user.id}
                                 onReload={reload}
                                 onError={setError}
@@ -484,7 +519,7 @@ export default function AppRouter() {
 
                         {view === 'settings' && (
                             <SettingsPage
-                                onBack={backFromSettings}
+                                onBack={goBack}
                                 profile={profile}
                                 preferences={preferences}
                                 userId={session.user.id}
@@ -495,7 +530,7 @@ export default function AppRouter() {
                         )}
 
                         {view === 'admin' && isAdmin && (
-                            <Admin onError={setError} />
+                            <Admin onError={setError} onBack={goBack} />
                         )}
                     </div>
                 </main>

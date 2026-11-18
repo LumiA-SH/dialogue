@@ -3,7 +3,7 @@ import { Plus, Edit3 } from 'lucide-react';
 import Avatar from '../components/Avatar';
 import CharacterForm from '../components/CharacterForm';
 
-export default function Characters({ characters, userId, onReload, onError }) {
+export default function Characters({ characters, userId, onReload, onError, onBack }) {
     const [editingCharacter, setEditingCharacter] = useState(null);
     const [formOpen, setFormOpen] = useState(false);
 
@@ -34,6 +34,7 @@ export default function Characters({ characters, userId, onReload, onError }) {
                     <h1>캐릭터</h1>
                     <p>내 계정에 등록된 캐릭터</p>
                 </div>
+                <button className="secondary" type="button" onClick={onBack}>뒤로가기</button>
                 <button className="primary" onClick={openCreate}>
                     <Plus size={18} /> 캐릭터 추가
                 </button>

@@ -98,7 +98,7 @@ function RoomCard({ room, onSelect, onInvite, joiningRoomId }) {
     );
 }
 
-export default function Rooms({ rooms, invites = [], isAdmin, onSelect, onReload, onError, joiningRoomId }) {
+export default function Rooms({ rooms, invites = [], isAdmin, onSelect, onReload, onError, joiningRoomId, onBack }) {
     const [editingRoom, setEditingRoom] = useState(null);
     const [formOpen, setFormOpen] = useState(false);
     const [inviteRoom, setInviteRoom] = useState(null);
@@ -240,6 +240,7 @@ export default function Rooms({ rooms, invites = [], isAdmin, onSelect, onReload
                 </div>
 
                 <div className="pbp-home-actions">
+                    <button className="secondary" type="button" onClick={onBack}>뒤로가기</button>
                     <div className="pbp-room-search">
                         <Search size={17} aria-hidden="true" />
                         <label className="pbp-visually-hidden" htmlFor="room-search">

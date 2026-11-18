@@ -57,7 +57,7 @@ function isNearBottom(element) {
     return element.scrollHeight - element.scrollTop - element.clientHeight <= BOTTOM_THRESHOLD;
 }
 
-export default function RoomView({ room, userId, characters, preferences, onCharacterSaved, onBack, onEdit, onError, presence, onTypingChange }) {
+export default function RoomView({ room, userId, characters, preferences, onCharacterSaved, onBack, onEdit, onError, presence, onTypingChange, beforeLeaveRef }) {
     const [messages, setMessages] = useState([]);
     const [roomCharacters, setRoomCharacters] = useState([]);
     const [membership, setMembership] = useState(null);
@@ -327,10 +327,7 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         }
     }
 
-    async function handleBack() {
-        if (leavingRef.current) return;
-        leavingRef.current = true;
-
+    async function prepareLeave() {
         const lastMessage = messages[messages.length - 1];
 
         if (isNearBottom(logRef.current) && lastMessage) {
@@ -338,7 +335,18 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         } else {
             await readWriteRef.current.catch(() => {});
         }
+    }
 
+    useLayoutEffect(() => {
+        if (!beforeLeaveRef) return;
+        beforeLeaveRef.current = prepareLeave;
+        return () => { beforeLeaveRef.current = null; };
+    });
+
+    async function handleBack() {
+        if (leavingRef.current) return;
+        leavingRef.current = true;
+        await prepareLeave();
         onBack();
     }
 
@@ -736,7 +744,7 @@ ${lines}
                     </div>
                 )}
 
-                <button className="pbp-scene-back" type="button" onClick={handleBack} title="방 목록">
+                <button className="pbp-scene-back" type="button" onClick={handleBack} title="뒤로가기">
                     <ArrowLeft size={21} />
                 </button>
 
@@ -759,7 +767,7 @@ ${lines}
 
             <section className="pbp-rp-panel">
                 <header className="room-header pbp-rp-header">
-                    <button className="icon-button pbp-rp-mobile-back" type="button" onClick={handleBack} title="방 목록" aria-label="방 목록">
+                    <button className="icon-button pbp-rp-mobile-back" type="button" onClick={handleBack} title="뒤로가기" aria-label="뒤로가기">
                         <ArrowLeft size={21} />
                     </button>
 
