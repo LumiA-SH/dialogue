@@ -1586,3 +1586,46 @@ textarea:focus {
     justify-content: flex-end;
   }
 }
+
+/* ========================================
+   CONNECTION STATUS SCREEN
+======================================== */
+
+.pbp-status-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.pbp-status-card .login-mark {
+  margin-bottom: 6px;
+}
+
+.pbp-status-card h1 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.pbp-status-card p {
+  margin: 0;
+  color: #7b8da6;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.pbp-status-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.pbp-status-actions button {
+  flex: 1;
+  min-width: 0;
+}

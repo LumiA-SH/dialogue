@@ -16,7 +16,7 @@ function formatDate(value) {
     });
 }
 
-export default function Admin({ onError, onBack }) {
+export default function Admin({ onError }) {
     const [userName, setUserName] = useState('');
     const [targetUserId, setTargetUserId] = useState('');
     const [issued, setIssued] = useState(null);
@@ -171,7 +171,6 @@ export default function Admin({ onError, onBack }) {
                     <h1><Shield size={24} /> 관리자</h1>
                     <p>사용자 계정 및 접속 코드 관리</p>
                 </div>
-                <button className="secondary" type="button" onClick={onBack}>뒤로가기</button>
             </div>
 
             <AdminUsers refreshKey={issued?.code} onError={onError} onSelectCode={id => { setTargetUserId(id); document.getElementById('admin-target-id')?.focus(); }} />

@@ -749,7 +749,6 @@ ${lines}
                 </button>
 
                 <div className="pbp-scene-actions">
-                    <button type="button" onClick={onEdit}><Settings size={15} /> 방 설정</button>
                     <button type="button" title="배경 영역 접기" aria-label="배경 영역 접기" onClick={() => setSceneCollapsed(true)}>
                         <PanelLeftClose size={17} />
                     </button>

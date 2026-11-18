@@ -24,7 +24,8 @@ const colorLabels = {
     ui_body_text_color: '본문 텍스트'
 };
 
-export default function Settings({ profile, preferences, userId, onSaved, onNotificationChange, onError, onBack }) {
+export default function Settings({ profile, preferences, userId, onSaved, onNotificationChange, onError }) {
+
     const [name, setName] = useState(profile?.user_name || 'User');
     const [portrait, setPortrait] = useState(profile?.user_portrait || '');
     const [imageFile, setImageFile] = useState(null);
@@ -152,7 +153,6 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                     <h1>설정</h1>
                     <p>프로필과 글쓰기 환경을 설정하세요</p>
                 </div>
-                <button className="secondary" type="button" onClick={onBack}>뒤로가기</button>
             </div>
 
             <form className="settings-form" onSubmit={save}>

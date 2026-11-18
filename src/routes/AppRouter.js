@@ -354,7 +354,17 @@ export default function AppRouter() {
     const userName = profile?.user_name || 'User';
 
     if (loading) {
-        return <div className="center-screen">연결 확인 중...</div>;
+        return (
+            <div className="center-screen">
+                <div className="login-card pbp-status-card" role="status">
+                    <div className="login-mark">
+                        <BookOpen size={32} />
+                    </div>
+                    <h1>다이얼로그</h1>
+                    <p>연결을 확인하고 있어요...</p>
+                </div>
+            </div>
+        );
     }
 
     if (!isConfigured) {
@@ -372,7 +382,23 @@ export default function AppRouter() {
     }
 
     if (!profile) {
-        return <div className="center-screen"><p>{error || '프로필 확인 중...'}</p><button className="secondary" onClick={reload}>다시 시도</button><button className="secondary" onClick={logout}>로그아웃</button></div>;
+        return (
+            <div className="center-screen">
+                <div className="login-card pbp-status-card">
+                    <div className="login-mark">
+                        <BookOpen size={32} />
+                    </div>
+
+                    <h1>다이얼로그</h1>
+                    <p role={error ? 'alert' : 'status'}>{error || '프로필 확인 중...'}</p>
+
+                    <div className="pbp-status-actions">
+                        <button className="secondary" onClick={reload}>다시 시도</button>
+                        <button className="secondary" onClick={logout}>로그아웃</button>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     if (profile.profile_completed === false) {
@@ -480,7 +506,6 @@ export default function AppRouter() {
                         {view === 'rooms' && !room && (
                             <Rooms
                                 rooms={rooms}
-                                onBack={goBack}
                                 invites={invites}
                                 isAdmin={isAdmin}
                                 joiningRoomId={joiningRoomId}
@@ -510,7 +535,6 @@ export default function AppRouter() {
                         {view === 'characters' && (
                             <Characters
                                 characters={characters}
-                                onBack={goBack}
                                 userId={session.user.id}
                                 onReload={reload}
                                 onError={setError}
@@ -519,7 +543,6 @@ export default function AppRouter() {
 
                         {view === 'settings' && (
                             <SettingsPage
-                                onBack={goBack}
                                 profile={profile}
                                 preferences={preferences}
                                 userId={session.user.id}
@@ -530,7 +553,7 @@ export default function AppRouter() {
                         )}
 
                         {view === 'admin' && isAdmin && (
-                            <Admin onError={setError} onBack={goBack} />
+                            <Admin onError={setError} />
                         )}
                     </div>
                 </main>

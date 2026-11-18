@@ -16,7 +16,7 @@ export default function Login({ onLogin, error, busy }) {
                     <BookOpen size={32} />
                 </div>
 
-                <h1>기록의 방</h1>
+                <h1>다이얼로그</h1>
                 <p>두 사람의 이야기가 머무는 곳</p>
 
                 <label htmlFor="code">관리자가 발급한 접속 코드</label>
@@ -27,7 +27,7 @@ export default function Login({ onLogin, error, busy }) {
                 </button>
 
                 {error && <p className="error">{error}</p>}
-                <small>접속 코드는 인증 서버에서 검증하며 브라우저에 저장하지 않습니다.</small>
+                <small>접속 코드는 서버에서 확인하며 브라우저에 저장하지 않습니다.</small>
             </form>
         </div>
     );
