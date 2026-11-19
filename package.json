@@ -2,7 +2,7 @@
   "name": "pbp-rp-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lumia-sh.github.io/dialogue/",
+  "homepage": "https://mad-love-max.com/",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
     "react": "^18.3.1",
