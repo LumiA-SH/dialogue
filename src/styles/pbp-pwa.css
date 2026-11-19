@@ -1,18 +1,100 @@
+/* ========================================
+   RP NOTIFICATION TOAST
+======================================== */
+
 .pbp-rp-notification {
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top));
-    right: calc(12px + env(safe-area-inset-right));
-    left: 12px;
+    top: calc(16px + env(safe-area-inset-top));
+    right: calc(16px + env(safe-area-inset-right));
     z-index: 1100;
     display: flex;
-    gap: 8px;
-    justify-content: center;
-    padding: 12px;
+    align-items: center;
+    gap: 11px;
+    width: calc(100vw - 32px);
+    max-width: 390px;
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
     background: var(--sub);
     color: var(--system-text);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(25, 45, 75, 0.16);
 }
+
+.pbp-rp-notification-icon {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--main);
+    color: #527ec2;
+}
+
+.pbp-rp-notification-content {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.pbp-rp-notification-content strong {
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.pbp-rp-notification-content span {
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 0.75;
+}
+
+.pbp-rp-notification .pbp-rp-notification-open {
+    flex-shrink: 0;
+    min-height: 34px;
+    padding: 7px 12px;
+    border: 0;
+    border-radius: 8px;
+    background: #527ec2;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.pbp-rp-notification .pbp-rp-notification-open:hover {
+    background: #406caa;
+}
+
+.pbp-rp-notification .pbp-rp-notification-close {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--system-text);
+    cursor: pointer;
+    opacity: 0.65;
+}
+
+.pbp-rp-notification .pbp-rp-notification-close:hover {
+    background: var(--main);
+    opacity: 1;
+}
+
+.pbp-rp-notification button:focus-visible {
+    outline: 2px solid #527ec2;
+    outline-offset: 2px;
+}
+
+/* ========================================
+   MOBILE / PWA
+======================================== */
 
 @media (max-width: 1024px), (pointer: coarse) {
     .app.pbp-app {
@@ -37,8 +119,36 @@
         font-size: 16px;
     }
 
-    /* iOS 입력창 포커스 시 자동 확대 방지 */
     .pbp-rp-panel .pbp-composer-expanded .pbp-composer-input-box textarea {
         font-size: 16px;
+    }
+}
+
+@media (max-width: 600px) {
+    .pbp-rp-notification {
+        top: calc(12px + env(safe-area-inset-top));
+        right: calc(12px + env(safe-area-inset-right));
+        width: calc(100vw - 24px - env(safe-area-inset-right) - env(safe-area-inset-left));
+        max-width: none;
+        gap: 8px;
+        padding: 11px;
+    }
+
+    .pbp-rp-notification-icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .pbp-rp-notification-content strong {
+        font-size: 12px;
+    }
+
+    .pbp-rp-notification-content span {
+        font-size: 10px;
+    }
+
+    .pbp-rp-notification .pbp-rp-notification-open {
+        padding: 7px 9px;
+        font-size: 11px;
     }
 }
