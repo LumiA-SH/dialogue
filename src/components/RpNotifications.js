@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 async function wasRead(userId, message) {
