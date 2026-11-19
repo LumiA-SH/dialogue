@@ -225,7 +225,7 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
                 </div>
 
                 <p className="notice">
-                    인장은 선택 사항이며, JPG·PNG·WebP·GIF 파일을 최대 5MB까지 등록할 수 있습니다.
+                    JPG·PNG·WebP·GIF 파일을 최대 5MB까지 등록할 수 있습니다.
                 </p>
 
                 <div className="pbp-character-color-section">
@@ -278,25 +278,17 @@ export default function CharacterForm({ character, userId, onClose, onSaved, onE
 
                 <div className="form-actions">
                     {isEdit && allowDelete && (
-                        <button
-                            className="danger"
-                            type="button"
-                            onClick={handleDelete}
-                            disabled={saving}
-                        >
+                        <button className="danger" type="button" onClick={handleDelete} disabled={saving}>
                             <Trash2 size={17} />
                             삭제
                         </button>
                     )}
 
-                    <button
-                        className="secondary"
-                        type="button"
-                        onClick={onClose}
-                        disabled={saving}
-                    >
-                        취소
-                    </button>
+                    {!isEdit && (
+                        <button className="secondary" type="button" onClick={onClose} disabled={saving}>
+                            취소
+                        </button>
+                    )}
 
                     <button
                         className="primary"

@@ -18,6 +18,16 @@ import Characters from '../pages/Characters';
 import SettingsPage from '../pages/Settings';
 import Admin from '../pages/Admin';
 
+
+function getInAppNotificationsEnabled(userId, fallback) {
+    try {
+        const saved = window.localStorage.getItem(`dialogue-in-app-notifications:${userId}`);
+        return saved === null ? Boolean(fallback) : saved === 'true';
+    } catch {
+        return Boolean(fallback);
+    }
+}
+
 const defaultColors = {
     ui_main_color: '#EAF2FF',
     ui_sub_color: '#FFFFFF',
@@ -407,7 +417,7 @@ export default function AppRouter() {
 
     return (
         <div className={`app pbp-app${isRoomOpen ? ' pbp-app-room' : ''}`} style={theme}>
-            <RpNotifications userId={session.user.id} enabled={notificationOverride ?? preferences?.notification_enabled} roomId={room?.room_id} onOpen={openNotification} onRefresh={reload} />
+            <RpNotifications userId={session.user.id} enabled={notificationOverride ?? getInAppNotificationsEnabled(session.user.id, preferences?.notification_enabled)} roomId={room?.room_id} onOpen={openNotification} onRefresh={reload} />
             {!isRoomOpen && (
                 <header className="topbar pbp-global-header">
                     <button className="brand pbp-brand" onClick={() => navigate('rooms')}>

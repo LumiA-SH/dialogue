@@ -273,7 +273,7 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         atBottomRef.current = isNearBottom(log);
         previousLastIdRef.current = lastMessage?.message_id || null;
 
-        if (atBottomRef.current && lastMessage) {
+        if (lastMessage) {
             persistRead(lastMessage);
         }
     }, [initialReady, messages, unreadStartId, persistRead]);
@@ -366,10 +366,11 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         if (composerExpanded) textareaRef.current?.focus();
     }, [composerExpanded]);
 
+
     const resizeMessengerInput = useCallback(() => {
         const input = textareaRef.current;
-        if (twitterMode || !input) return;
-        // Read the existing responsive CSS baseline before measuring wrapped content.
+        if (!input) return;
+
         input.style.removeProperty('height');
         const styles = window.getComputedStyle(input);
         const baseline = parseFloat(styles.height) || input.offsetHeight;
@@ -377,29 +378,42 @@ export default function RoomView({ room, userId, characters, preferences, onChar
         const cssMaximum = parseFloat(styles.maxHeight) || Infinity;
         const visibleHeight = window.visualViewport?.height || window.innerHeight;
         const maximum = Math.max(baseline, Math.min(cssMaximum, visibleHeight * 0.45));
+
         input.style.overflowY = 'hidden';
         input.style.height = '0px';
+
         const contentHeight = input.scrollHeight + border;
         input.style.height = `${Math.min(maximum, Math.max(baseline, contentHeight))}px`;
         input.style.overflowY = contentHeight > maximum ? 'auto' : 'hidden';
-    }, [twitterMode]);
+    }, []);
 
-    useLayoutEffect(() => { resizeMessengerInput(); }, [text, resizeMessengerInput]);
+    useLayoutEffect(() => {
+        resizeMessengerInput();
+    }, [text, composerExpanded, resizeMessengerInput]);
 
     useLayoutEffect(() => {
         const input = textareaRef.current;
-        if (twitterMode || !input) return;
+        if (!input) return;
+
         const originalResize = input.style.resize;
         input.style.resize = 'none';
+
         let width = input.getBoundingClientRect().width;
         const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => {
             const nextWidth = input.getBoundingClientRect().width;
-            if (nextWidth !== width) { width = nextWidth; resizeMessengerInput(); }
+
+            if (nextWidth !== width) {
+                width = nextWidth;
+                resizeMessengerInput();
+            }
         });
+
         observer?.observe(input);
         window.addEventListener('resize', resizeMessengerInput);
+
         const viewport = window.visualViewport;
         viewport?.addEventListener('resize', resizeMessengerInput);
+
         return () => {
             observer?.disconnect();
             window.removeEventListener('resize', resizeMessengerInput);
@@ -408,7 +422,7 @@ export default function RoomView({ room, userId, characters, preferences, onChar
             input.style.removeProperty('overflow-y');
             input.style.resize = originalResize;
         };
-    }, [twitterMode, resizeMessengerInput]);
+    }, [twitterMode, composerExpanded, resizeMessengerInput]);
 
     const availableCharacters = characters.filter(character =>
         roomCharacters.some(link => link.character_id === character.character_id && link.is_active !== false)

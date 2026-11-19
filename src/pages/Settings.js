@@ -383,14 +383,9 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
     if (previewOpen) {
         return (
             <div className="pbp-theme-editor">
-                <div className="section-heading pbp-theme-editor-heading">
-                    <div>
-                        <h1>UI 색상 편집</h1>
-                        <p>실제 RP방과 비슷한 화면에서 색상을 확인하세요.</p>
-                    </div>
-
+                <div className="pbp-theme-editor-nav">
                     <button className="secondary pbp-theme-back" type="button" onClick={closePreview}>
-                        설정으로 돌아가기
+                        ← 설정
                     </button>
                 </div>
 
@@ -449,103 +444,93 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
             </div>
 
             <form className="settings-form" onSubmit={save}>
-                <section className="panel">
+
+                <section className="panel pbp-owner-profile-panel">
                     <h2>오너 프로필</h2>
 
-                    <div className="profile-row">
-                        <Avatar src={imagePreview || portrait} name={name} size={64} />
+                    <div className="profile-row pbp-owner-profile-row">
+                        <Avatar src={imagePreview || portrait} name={name} size={90} />
 
-                        <div className="field-stack">
-                            <label htmlFor="profile-name">닉네임</label>
-                            <input id="profile-name" maxLength={24} required value={name} onChange={event => setName(event.target.value)} />
+                        <div className="pbp-owner-profile-fields">
+                            <div className="pbp-owner-name-row">
+                                <label htmlFor="profile-name">닉네임</label>
+                                <input id="profile-name" maxLength={24} required value={name} onChange={event => setName(event.target.value)} />
+                            </div>
 
-                            <label htmlFor="profile-image">인장 이미지</label>
-                            <input ref={imageInputRef} id="profile-image" className="pbp-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} disabled={saving} />
+                            <div className="pbp-owner-image-row">
+                                <span aria-hidden="true" />
+                                <input ref={imageInputRef} id="profile-image" className="pbp-profile-file-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageChange} disabled={saving} />
 
-                            <div className="pbp-profile-image-actions">
-                                <button className="secondary pbp-profile-image-icon" type="button" title="이미지 선택" aria-label="이미지 선택" onClick={() => {
-                                    if (imageInputRef.current) {
-                                        imageInputRef.current.value = '';
-                                        imageInputRef.current.click();
-                                    }
-                                }} disabled={saving}>
-                                    <ImagePlus size={18} />
-                                </button>
 
-                                {(imagePreview || portrait) && (
-                                    <button className="secondary pbp-profile-image-icon" type="button" title="이미지 제거" aria-label="이미지 제거" onClick={() => {
-                                        setImageFile(null);
-                                        setPortrait('');
-                                        if (imageInputRef.current) imageInputRef.current.value = '';
+                                <div className="pbp-profile-image-actions">
+                                    <button className="secondary pbp-profile-image-icon" type="button" onClick={() => {
+                                        if (imageInputRef.current) {
+                                            imageInputRef.current.value = '';
+                                            imageInputRef.current.click();
+                                        }
                                     }} disabled={saving}>
-                                        <Trash2 size={18} />
+                                        <ImagePlus size={18} />
+                                        이미지 등록
                                     </button>
-                                )}
-                                <span>이미지 선택 / 이미지 제거</span>
 
-                                {imageFile && <span className="pbp-profile-file-name">{imageFile.name}</span>}
+                                    {(imagePreview || portrait) && (
+                                        <button className="secondary pbp-profile-image-icon" type="button" onClick={() => {
+                                            setImageFile(null);
+                                            setPortrait('');
+                                            if (imageInputRef.current) imageInputRef.current.value = '';
+                                        }} disabled={saving}>
+                                            <Trash2 size={18} />
+                                            이미지 삭제
+                                        </button>
+                                    )}
+
+                                    {imageFile && <span className="pbp-profile-file-name">{imageFile.name}</span>}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <details className="panel">
-                    <summary style={{ cursor: 'pointer' }}>
-                        <h2 style={{ display: 'inline', margin: 0 }}>글쓰기 설정</h2>
-                    </summary>
+                <section className="panel pbp-writing-settings-panel">
+                    <label id="input-style-label">입력 방식</label>
 
-                    <div style={{ marginTop: 23 }}>
-                        <label id="input-style-label">입력 방식</label>
-
-                        <div className="pbp-theme-choice-row" role="group" aria-labelledby="input-style-label">
-                            <button className="pbp-theme-choice" type="button" aria-pressed={form.input_style === 'messenger'} disabled={choiceSaving} onClick={() => selectOption('input_style', 'messenger')}>
-                                메신저 방식
-                            </button>
-                            <button className="pbp-theme-choice" type="button" aria-pressed={form.input_style === 'twitter'} disabled={choiceSaving} onClick={() => selectOption('input_style', 'twitter')}>
-                                트위터 방식
-                            </button>
-                        </div>
-
-                        <label id="send-shortcut-label">전송 단축키</label>
-
-                        <div className="pbp-theme-choice-row" role="group" aria-labelledby="send-shortcut-label">
-                            <button className="pbp-theme-choice" type="button" aria-pressed={form.send_shortcut === 'shift_enter'} disabled={choiceSaving} onClick={() => selectOption('send_shortcut', 'shift_enter')}>
-                                Shift + Enter
-                            </button>
-                            <button className="pbp-theme-choice" type="button" aria-pressed={form.send_shortcut === 'ctrl_enter'} disabled={choiceSaving} onClick={() => selectOption('send_shortcut', 'ctrl_enter')}>
-                                Ctrl + Enter
-                            </button>
-                        </div>
-
-                        <p className="muted pbp-theme-shortcut-help">
-                            Enter는 줄바꿈이며, 선택한 단축키를 누르면 RP가 전송됩니다.
-                        </p>
-
-                        {choiceStatus.text && (
-                            <p className={`pbp-theme-save-status is-${choiceStatus.type}`} role="status" aria-live="polite">
-                                {choiceStatus.text}
-                            </p>
-                        )}
-
-                        <div className="pbp-push-settings-box">
-                            <PushSettings userId={userId} enabled={form.notification_enabled} onChange={enabled => {
-                                updateForm({ notification_enabled: enabled });
-                                onNotificationChange?.(enabled);
-                            }} />
-                        </div>
+                    <div className="pbp-theme-choice-row" role="group" aria-labelledby="input-style-label">
+                        <button className="pbp-theme-choice" type="button" aria-pressed={form.input_style === 'messenger'} disabled={choiceSaving} onClick={() => selectOption('input_style', 'messenger')}>
+                            메신저 방식
+                        </button>
+                        <button className="pbp-theme-choice" type="button" aria-pressed={form.input_style === 'twitter'} disabled={choiceSaving} onClick={() => selectOption('input_style', 'twitter')}>
+                            트위터 방식
+                        </button>
                     </div>
-                </details>
 
-                <details className="panel pbp-theme-settings-panel">
-                    <summary style={{ cursor: 'pointer' }}>
-                        <h2 style={{ display: 'inline', margin: 0 }}>UI 색상</h2>
-                    </summary>
+                    <label id="send-shortcut-label">전송 단축키</label>
 
-                    <div style={{ marginTop: 23 }}>
-                        <p className="muted">
-                            실제 RP방과 비슷한 미리보기 화면에서 UI 색상을 편집할 수 있습니다.
+                    <div className="pbp-theme-choice-row" role="group" aria-labelledby="send-shortcut-label">
+                        <button className="pbp-theme-choice" type="button" aria-pressed={form.send_shortcut === 'shift_enter'} disabled={choiceSaving} onClick={() => selectOption('send_shortcut', 'shift_enter')}>
+                            Shift + Enter
+                        </button>
+                        <button className="pbp-theme-choice" type="button" aria-pressed={form.send_shortcut === 'ctrl_enter'} disabled={choiceSaving} onClick={() => selectOption('send_shortcut', 'ctrl_enter')}>
+                            Ctrl + Enter
+                        </button>
+                    </div>
+
+                    <p className="muted pbp-theme-shortcut-help">
+                        Enter는 줄바꿈이며, 선택한 단축키를 누르면 RP가 전송됩니다.
+                    </p>
+
+                    {choiceStatus.text && (
+                        <p className={`pbp-theme-save-status is-${choiceStatus.type}`} role="status" aria-live="polite">
+                            {choiceStatus.text}
                         </p>
+                    )}
 
+                    <div className="pbp-push-settings-box">
+                        <PushSettings userId={userId} enabled={form.notification_enabled} onChange={onNotificationChange} />
+                    </div>
+                </section>
+
+                <section className="panel pbp-theme-settings-panel">
+                    <div className="pbp-theme-settings-content">
                         <div className="pbp-theme-color-swatches" aria-label="현재 UI 색상">
                             {colorKeys.map(key => (
                                 <span key={key} title={`${colorLabels[key]}: ${form[key]}`} style={{ backgroundColor: form[key] }} />
@@ -562,7 +547,7 @@ export default function Settings({ profile, preferences, userId, onSaved, onNoti
                             </p>
                         )}
                     </div>
-                </details>
+                </section>
 
                 <button className="primary save-button" type="submit" disabled={saving || !name.trim()}>
                     {saving ? '저장 중...' : '프로필 저장'}

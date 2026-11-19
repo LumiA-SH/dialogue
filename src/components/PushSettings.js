@@ -2,47 +2,129 @@ import React, { useEffect, useState } from 'react';
 import { enablePush, pushSupport, removeDevicePush } from '../lib/pwa';
 import { supabase } from '../lib/supabase';
 
+function getStorageKey(userId) {
+    return `dialogue-in-app-notifications:${userId}`;
+}
+
+function readSetting(userId, fallback) {
+    try {
+        const saved = window.localStorage.getItem(getStorageKey(userId));
+        return saved === null ? Boolean(fallback) : saved === 'true';
+    } catch {
+        return Boolean(fallback);
+    }
+}
+
+function storeSetting(userId, enabled) {
+    try {
+        window.localStorage.setItem(getStorageKey(userId), String(enabled));
+    } catch {
+        // 브라우저 저장소가 제한된 경우 현재 세션에서만 적용합니다.
+    }
+}
+
 export default function PushSettings({ userId, enabled, onChange }) {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState('');
     const [subscribed, setSubscribed] = useState(false);
+    const [inAppEnabled, setInAppEnabled] = useState(() => readSetting(userId, enabled));
     const support = pushSupport();
+
     useEffect(() => {
         let active = true;
-        if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistration(`${process.env.PUBLIC_URL || ''}/`).then(registration => registration?.pushManager?.getSubscription()).then(subscription => { if (active) setSubscribed(Boolean(subscription)); }).catch(() => {});
-        return () => { active = false; };
-    }, []);
-    async function change(next, permission, inAppOnly = false) {
+
+        setSubscribed(false);
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration(`${process.env.PUBLIC_URL || ''}/`)
+                .then(registration => registration?.pushManager?.getSubscription())
+                .then(subscription => {
+                    if (active) setSubscribed(Boolean(subscription));
+                })
+                .catch(() => {});
+        }
+
+        return () => {
+            active = false;
+        };
+    }, [userId]);
+
+    useEffect(() => {
+        setInAppEnabled(readSetting(userId, enabled));
+    }, [userId, enabled]);
+
+    async function changeDevice(next) {
+        if (busy) return;
+
         setBusy(true);
         setMessage('');
+
         try {
-            if (next && !support && !inAppOnly) { await enablePush(permission); setSubscribed(true); }
-            if (!next) { await removeDevicePush(); setSubscribed(false); }
-            const { error } = await supabase.from('settings').upsert({ user_id: userId, notification_enabled: next }, { onConflict: 'user_id' });
-            if (error) throw error;
-            onChange(next);
-            setMessage(next ? '알림을 켰습니다.' : '알림을 끄고 이 기기의 구독을 해제했습니다.');
-        } catch (err) { setMessage(err.message); }
-        finally { setBusy(false); }
+            storeSetting(userId, inAppEnabled);
+
+            if (next) {
+                if (support) throw new Error(support);
+
+                const permission = Notification.requestPermission();
+                await enablePush(permission);
+                setSubscribed(true);
+
+                const { error } = await supabase.from('settings').upsert({
+                    user_id: userId,
+                    notification_enabled: true
+                }, { onConflict: 'user_id' });
+
+                if (error) throw error;
+
+                setMessage('이 기기의 알림을 켰습니다.');
+            } else {
+                await removeDevicePush();
+                setSubscribed(false);
+                setMessage('이 기기의 알림 구독을 해제했습니다.');
+            }
+        } catch (err) {
+            setMessage(err.message || '기기 알림 설정에 실패했습니다.');
+        } finally {
+            setBusy(false);
+        }
     }
-    return <div className="form-body">
-        <h3>신규 RP 알림</h3>
-        <p>알림 설정: {enabled ? '켜짐' : '꺼짐'} · 이 기기 푸시: {subscribed ? '구독됨' : '미구독'}</p>
-        {support && <p className="notice">{support}</p>}
-        <p className="muted">
-            iPhone·iPad는 iOS/iPadOS 16.4 이상에서 홈 화면 앱으로 실행해 주세요.
-            <br />
-            알림 권한이 거부되었다면 브라우저 사이트 설정 또는 iOS 설정 → 알림에서 변경할 수 있습니다.
-        </p>
-        <div className="pbp-admin-user-actions">
-            <button className="secondary" type="button" disabled={busy} onClick={() => {
-                // iOS requires the permission prompt directly inside a user gesture.
-                const permission = !support ? Notification.requestPermission() : Promise.resolve('unsupported');
-                change(true, permission);
-            }}>{support ? '인앱 알림 켜기' : '이 기기 알림 켜기'}</button>
-            {!support && <button className="secondary" type="button" disabled={busy} onClick={() => change(true, null, true)}>인앱 알림만 켜기</button>}
-            <button className="secondary" type="button" disabled={busy || (!enabled && !subscribed)} onClick={() => change(false)}>알림 끄기</button>
+
+    function changeInApp(next) {
+        if (busy) return;
+
+        storeSetting(userId, next);
+        setInAppEnabled(next);
+        onChange?.(next);
+        setMessage(next ? '인앱 알림을 켰습니다.' : '인앱 알림을 껐습니다.');
+    }
+
+    return (
+        <div className="form-body pbp-notification-settings">
+            <h3>알림 설정</h3>
+
+            <label className="pbp-notification-toggle">
+                <span>
+                    <strong>기기 알림</strong>
+                    <small>새 RP를 기기 알림으로 받습니다.</small>
+                </span>
+                <input type="checkbox" role="switch" checked={subscribed} disabled={busy || Boolean(support)} onChange={event => void changeDevice(event.target.checked)} />
+            </label>
+
+            <label className="pbp-notification-toggle">
+                <span>
+                    <strong>인앱 알림</strong>
+                    <small>다이얼로그 이용 중 새 RP를 알려줍니다.</small>
+                </span>
+                <input type="checkbox" role="switch" checked={inAppEnabled} disabled={busy} onChange={event => changeInApp(event.target.checked)} />
+            </label>
+
+            {support && <p className="notice">{support}</p>}
+
+            <p className="muted">
+                iPhone·iPad 기기 알림은 iOS/iPadOS 16.4 이상에서 홈 화면 앱으로 실행해야 사용할 수 있습니다.
+            </p>
+
+            {message && <p role="status">{message}</p>}
         </div>
-        {message && <p role="status">{message}</p>}
-    </div>;
+    );
 }
