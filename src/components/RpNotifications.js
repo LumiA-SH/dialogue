@@ -92,8 +92,8 @@ export default function RpNotifications({ userId, enabled, roomId, onOpen, onRef
                 열기
             </button>
 
-            <button className="pbp-rp-notification-close" type="button" aria-label="알림 닫기" onClick={() => setNotice(null)}>
-                <X size={17} />
+            <button className="pbp-rp-notification-close" type="button" onClick={() => setNotice(null)}>
+                닫기
             </button>
         </div>
     );
