@@ -378,7 +378,8 @@
 }
 
 .pbp-rp-message-body {
-    text-align: center;
+    text-align: justify;
+    text-justify: inter-character;
     color: var(--body-text);
     font-size: 13px;
     line-height: 1.65;
