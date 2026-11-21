@@ -70,122 +70,26 @@ Deno.serve(async req => {
     if (action === "list-users") {
       const page = Math.max(0, Math.min(10000, Math.floor(Number(body.page) || 0)));
       const { data, error, count } = await admin.from("user")
-        .select("user_id,user_name,user_portrait,role,is_active,expires_at,created_at", { count: "exact" })
-        .order("created_at", { ascending: false }).order("user_id").range(page * 50, page * 50 + 49);
+          .select("user_id,user_name,user_portrait,role,is_active,expires_at,created_at,profile_completed", { count: "exact" })
+          .order("created_at", { ascending: false }).order("user_id").range(page * 50, page * 50 + 49);
       if (error) throw error;
       return reply({ users: data || [], total: count || 0, actor_id: user.id });
     }
-    if (action === "set-user-status") {
+    if (action === "delete-user") {
       const target = String(body.user_id || "");
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target)) return reply({ error: "올바른 사용자 ID가 필요합니다." }, 400);
-      if (target === user.id) return reply({ error: "현재 로그인한 관리자 자신의 상태는 변경할 수 없습니다." }, 400);
-      if (!["activate", "deactivate", "expire"].includes(body.status)) return reply({ error: "지원하지 않는 계정 상태입니다." }, 400);
-      const values = body.status === "activate" ? { is_active: true, expires_at: null }
-        : body.status === "deactivate" ? { is_active: false } : { expires_at: new Date().toISOString() };
-      const { data, error } = await admin.from("user").update(values).eq("user_id", target)
-        .select("user_id,is_active,expires_at").maybeSingle();
-      if (error) throw error;
-      if (!data) return reply({ error: "사용자를 찾을 수 없습니다." }, 404);
-      return reply({ user: data });
-    }
 
-    if (action === "list-active-codes") {
-      const { data: tokens, error: tokenError } = await admin
-        .from("user_tokens")
-        .select("token_id,user_id,created_at,expires_at,vault_secret_id")
-        .is("revoked_at", null)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (tokenError) throw tokenError;
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(target)) {
+        return reply({ error: "올바른 사용자 ID가 필요합니다." }, 400);
+      }
 
-      const current = Date.now();
-      const active = (tokens || []).filter(token =>
-        !token.expires_at || new Date(token.expires_at).getTime() > current
-      );
-      const userIds = [...new Set(active.map(token => token.user_id))];
-      let users: { user_id: string; user_name: string }[] = [];
+      if (target === user.id) {
+        return reply({ error: "현재 로그인한 관리자 계정은 삭제할 수 없습니다." }, 403);
+      }
 
-      if (userIds.length) {
-        const { data: userRows, error: userError } = await admin
-          .from("user")
+      const { data: targetProfile, error: targetError } = await admin.from("user")
           .select("user_id,user_name")
-          .in("user_id", userIds);
-        if (userError) throw userError;
-        users = userRows || [];
-      }
+          .eq("user_id", target)
+          .maybeSingle();
 
-      const names = new Map(users.map(user => [user.user_id, user.user_name]));
-      return reply({
-        tokens: active.map(token => ({
-          token_id: token.token_id,
-          user_id: token.user_id,
-          user_name: names.get(token.user_id) || "사용자",
-          created_at: token.created_at,
-          expires_at: token.expires_at,
-          recoverable: Boolean(token.vault_secret_id)
-        }))
-      });
-    }
-
-    if (action === "reveal-code") {
-      const tokenId = String(body.token_id || "");
-      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tokenId)) {
-        return reply({ error: "올바르지 않은 토큰 ID입니다." }, 400);
-      }
-
-      const { data: code, error: revealError } = await admin.rpc(
-        "pbp_reveal_user_token", { p_token_id: tokenId }
-      );
-      if (revealError) throw revealError;
-      if (!code) return reply({ error: "토큰을 확인할 수 없습니다. 기존 발급 토큰은 재발급해 주세요." }, 404);
-      return reply({ code });
-    }
-
-    if (action === "create-user") {
-      const name = String(body.user_name || "User").trim().slice(0, 24) || "User";
-      const provisionalId = crypto.randomUUID();
-      const password = makeCode();
-      const { data: created, error: createError } = await admin.auth.admin.createUser({ email: emailFor(provisionalId), password, email_confirm: true });
-      if (createError || !created.user) throw createError || Error("Create user failed");
-      const id = created.user.id;
-      const { error: emailError } = await admin.auth.admin.updateUserById(id, { email: emailFor(id), email_confirm: true });
-      if (emailError) { await admin.auth.admin.deleteUser(id); throw emailError; }
-      const { error: profileError } = await admin.from("user").insert({ user_id: id, user_name: name, role: 2 });
-      if (profileError) {
-        await admin.auth.admin.deleteUser(id);
-        throw profileError;
-      }
-      const code = makeCode();
-      const { error: tokenError } = await admin.rpc("pbp_store_user_token", { p_user_id: id, p_code: code, p_revoke_previous: false });
-      if (tokenError) throw tokenError;
-      return reply({ user_id: id, code });
-    }
-
-    if (action === "rotate-code") {
-      const target = String(body.user_id || "");
-      if (!/^[0-9a-f-]{36}$/i.test(target)) return reply({ error: "Invalid user" }, 400);
-      const { data: targetProfile } = await admin.from("user").select("user_id").eq("user_id", target).single();
-      if (!targetProfile) return reply({ error: "User not found" }, 404);
-      const code = makeCode();
-      const { error: issueError } = await admin.rpc("pbp_store_user_token", {
-        p_user_id: target,
-        p_code: code,
-        p_revoke_previous: true
-      });
-      if (issueError) throw issueError;
-      return reply({ user_id: target, code });
-    }
-
-    if (action === "revoke-code") {
-      const target = String(body.user_id || "");
-      if (!/^[0-9a-f-]{36}$/i.test(target)) return reply({ error: "Invalid user" }, 400);
-      const { error } = await admin.from("user_tokens").update({ revoked_at: new Date().toISOString() }).eq("user_id", target).is("revoked_at", null);
-      if (error) throw error;
-      return reply({ ok: true });
-    }
-    return reply({ error: "Unknown action" }, 400);
-  } catch (error) {
-    console.error("PBP auth error", error);
-    return reply({ error: "인증 처리에 실패했습니다." }, 500);
-  }
-});
+      if (targetError) throw targetError;
+      if (!targetProfile) return reply({ error: "사용자를 찾을 수 없습니다." }, 404);

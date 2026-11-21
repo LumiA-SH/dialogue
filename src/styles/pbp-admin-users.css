@@ -375,3 +375,31 @@
 .admin-auth-actions button svg {
     flex-shrink: 0;
 }
+
+/* ========================================
+   ACCOUNT PERMANENT DELETE
+======================================== */
+
+.pbp-admin-user-id {
+    color: #8493a6;
+    font-size: 10px;
+    font-weight: 400;
+}
+
+.pbp-admin-user-incomplete {
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--system-text);
+    font-size: 10px;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-delete {
+    border: 1px solid #e8baba;
+    background: #fff4f4;
+    color: #b54141;
+}
+
+.pbp-admin-users .pbp-admin-user-actions .pbp-admin-user-delete:hover:not(:disabled) {
+    background: #ffe1e1;
+}

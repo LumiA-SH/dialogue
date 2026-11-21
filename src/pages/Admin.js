@@ -173,7 +173,19 @@ export default function Admin({ onError }) {
                 </div>
             </div>
 
-            <AdminUsers refreshKey={issued?.code} onError={onError} onSelectCode={id => { setTargetUserId(id); document.getElementById('admin-target-id')?.focus(); }} />
+            <AdminUsers
+                refreshKey={issued?.code}
+                onError={onError}
+                onSelectCode={id => {
+                    setTargetUserId(id);
+                    document.getElementById('admin-target-id')?.focus();
+                }}
+                onDeleted={async id => {
+                    if (targetUserId === id) setTargetUserId('');
+                    setIssued(null);
+                    setRevealed(null);
+                    await loadTokens();
+                }} />
 
             <section className="panel">
                 <h2>사용자 생성</h2>

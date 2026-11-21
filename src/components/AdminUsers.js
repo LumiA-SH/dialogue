@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, KeyRound, Check, Ban, Clock3, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, KeyRound, Check, Ban, Clock3, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { adminAuthAction } from '../lib/api';
 import Avatar from './Avatar';
 
 const PAGE_SIZE = 50;
 
-export default function AdminUsers({ refreshKey, onSelectCode, onError }) {
+export default function AdminUsers({ refreshKey, onSelectCode, onDeleted, onError }) {
     const [users, setUsers] = useState([]);
     const [actor, setActor] = useState('');
     const [page, setPage] = useState(0);
@@ -56,6 +56,39 @@ export default function AdminUsers({ refreshKey, onSelectCode, onError }) {
         }
     }
 
+    async function deleteUser(user) {
+        if (busy || user.user_id === actor) return;
+
+        const confirmed = window.confirm(
+            `'${user.user_name}' 계정을 완전히 삭제할까요?\n\n` +
+            `사용자 ID: ${user.user_id}\n\n` +
+            '계정과 접속 코드가 삭제되며 복구할 수 없습니다.\n' +
+            'RP 기록이 남아 있는 계정은 삭제되지 않습니다.'
+        );
+
+        if (!confirmed) return;
+
+        setBusy(true);
+
+        try {
+            await adminAuthAction('delete-user', {
+                user_id: user.user_id
+            });
+
+            if (page > 0 && users.length === 1) {
+                setPage(value => value - 1);
+            } else {
+                await load();
+            }
+
+            await onDeleted?.(user.user_id);
+        } catch (err) {
+            onError(err.message || '계정을 삭제하지 못했습니다.');
+        } finally {
+            setBusy(false);
+        }
+    }
+
     const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
     function renderUser(user) {
@@ -74,11 +107,18 @@ export default function AdminUsers({ refreshKey, onSelectCode, onError }) {
                         <div className="pbp-admin-user-name">
                             <strong>{user.user_name}</strong>
                             {isSelf && <span className="pbp-admin-user-self">본인</span>}
+                            <span className="pbp-admin-user-id" title={user.user_id}>
+                                {user.user_id.slice(0, 8)}
+                            </span>
                         </div>
 
                         <div className="pbp-admin-user-meta">
                             <span className={`pbp-admin-user-status is-${statusClass}`}>{status}</span>
                             <span className="pbp-admin-user-role">{user.role === 1 ? '관리자' : '일반 사용자'}</span>
+
+                            {user.profile_completed === false && (
+                                <span className="pbp-admin-user-incomplete">프로필 미완료</span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -108,6 +148,13 @@ export default function AdminUsers({ refreshKey, onSelectCode, onError }) {
                                 만료 처리
                             </button>
                         </>
+                    )}
+
+                    {!isSelf && (
+                        <button className="danger-outline pbp-admin-user-delete" type="button" disabled={busy} onClick={() => deleteUser(user)}>
+                            <Trash2 size={15} />
+                            삭제
+                        </button>
                     )}
                 </div>
             </div>
